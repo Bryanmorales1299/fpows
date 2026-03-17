@@ -25,11 +25,6 @@ const cleanEnv = (val, defaultValue = "") => {
     return val.toString().replace(/[^\x20-\x7E]/g, '').trim().replace(/^"|"$/g, '');
 };
 
-// ... inside the code, update logs ...
-console.log(`[DEBUG] Raw process.env.SIMPRO_BASE_URL: ${JSON.stringify(process.env.SIMPRO_BASE_URL)}`);
-// ... and in getSimpro ...
-console.log(`[FETCHING] ${JSON.stringify(validatedUrl)}`);
-
 // SimPRO credentials
 console.log(`[DEBUG] Raw process.env.SIMPRO_BASE_URL: ${JSON.stringify(process.env.SIMPRO_BASE_URL)}`);
 const SIMPRO_BASE_URL = cleanEnv(process.env.SIMPRO_BASE_URL, "https://redmen-uat.simprosuite.com").replace(/\/$/, '');
