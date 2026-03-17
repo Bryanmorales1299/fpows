@@ -26,18 +26,14 @@ const cleanEnv = (val, defaultValue = "") => {
 };
 
 // SimPRO credentials
-console.log(`[DEBUG] Raw process.env.SIMPRO_BASE_URL: ${JSON.stringify(process.env.SIMPRO_BASE_URL)}`);
 const SIMPRO_BASE_URL = cleanEnv(process.env.SIMPRO_BASE_URL, "https://redmen-uat.simprosuite.com").replace(/\/$/, '');
 const SIMPRO_ACCESS_TOKEN = cleanEnv(process.env.SIMPRO_ACCESS_TOKEN, "6c6b91755ff14c8ff1ffb843c0737955d7a3a88a");
-
-console.log(`[INIT] SimPRO connectivity initialized for: ${JSON.stringify(SIMPRO_BASE_URL)}`);
 
 // We'll use absolute URLs instead of baseURL to avoid Axios configuration issues in some environments
 const getSimpro = async (path) => {
     const rawUrl = `${SIMPRO_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`;
     try {
         const validatedUrl = new URL(rawUrl).toString();
-        console.log(`[FETCHING] ${JSON.stringify(validatedUrl)}`);
         return axios.get(validatedUrl, {
             headers: {
                 'Authorization': `Bearer ${SIMPRO_ACCESS_TOKEN}`,
