@@ -160,9 +160,49 @@
         @keyframes spin { to { transform: rotate(360deg); } }
 
         @media print {
-            .control-bar, .print-btn, #error-banner { display: none !important; }
-            #fpows-form { box-shadow: none; border-radius: 0; }
-            body { background: white; }
+            @page { margin: 1cm; size: portrait; }
+            .control-bar, .print-btn, #error-banner, #loading-overlay { display: none !important; }
+            
+            body { background: white; padding: 0; margin: 0; }
+            .page-wrapper { max-width: none; width: 100%; margin: 0; padding: 0; }
+            
+            #fpows-form { 
+                box-shadow: none !important; 
+                border: 1px solid #000 !important; 
+                width: 100% !important;
+                opacity: 1 !important;
+            }
+
+            .works-table { width: 100% !important; table-layout: fixed !important; }
+            
+            /* Explicit column widths for Outstanding Works (9 columns) */
+            #works-table th:nth-child(1), #works-table td:nth-child(1) { width: 45px !important; }
+            #works-table th:nth-child(2), #works-table td:nth-child(2) { width: 85px !important; }
+            #works-table th:nth-child(3), #works-table td:nth-child(3) { width: auto !important; }
+            #works-table th:nth-child(4), #works-table td:nth-child(4) { width: 55px !important; }
+            #works-table th:nth-child(5), #works-table td:nth-child(5) { width: 55px !important; }
+            #works-table th:nth-child(6), #works-table td:nth-child(6) { width: 55px !important; }
+            #works-table th:nth-child(7), #works-table td:nth-child(7) { width: 80px !important; }
+            #works-table th:nth-child(8), #works-table td:nth-child(8) { width: 120px !important; }
+            #works-table th:nth-child(9), #works-table td:nth-child(9) { width: 75px !important; }
+
+            /* Explicit column widths for Recommendations (6 columns) */
+            #rec-table th:nth-child(1), #rec-table td:nth-child(1) { width: 80px !important; }
+            #rec-table th:nth-child(2), #rec-table td:nth-child(2) { width: 100px !important; }
+            #rec-table th:nth-child(3), #rec-table td:nth-child(3) { width: auto !important; }
+            #rec-table th:nth-child(4), #rec-table td:nth-child(4) { width: 100px !important; }
+            #rec-table th:nth-child(5), #rec-table td:nth-child(5) { width: 150px !important; }
+            #rec-table th:nth-child(6), #rec-table td:nth-child(6) { width: 85px !important; }
+
+            .works-table td { font-size: 7.5pt !important; padding: 6px !important; border: 1px solid #000 !important; }
+            .works-table th { background: #eee !important; color: #000 !important; border: 1px solid #000 !important; font-size: 7pt !important; }
+            
+            .meta-cell { border-color: #000 !important; }
+            .meta-row { border-color: #000 !important; }
+            .form-header { border-bottom: 2px solid #000 !important; }
+            .logo-block { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            
+            .status-badge { border: 1px solid #000; padding: 1px 4px; }
         }
     </style>
 </head>
@@ -287,7 +327,7 @@
         </div>
 
         <!-- Outstanding Works Table -->
-        <table class="works-table">
+        <table class="works-table" id="works-table">
             <thead>
                 <tr>
                     <th style="width:6%">Date</th>
@@ -313,14 +353,14 @@
 
         <!-- Recommendations -->
         <div class="rec-title">Recommendations Made to Client</div>
-        <table class="works-table">
+        <table class="works-table" id="rec-table">
             <thead>
                 <tr>
-                    <th style="width:9%">Date of Discussion</th>
-                    <th style="width:11%">Equipment Type</th>
+                    <th style="width:12%">Date of Discussion</th>
+                    <th style="width:12%">Equipment Type</th>
                     <th style="width:26%">Issue</th>
                     <th style="width:13%">Responsibility</th>
-                    <th style="width:30%">Comment</th>
+                    <th style="width:26%">Comment</th>
                     <th style="width:11%">Status</th>
                 </tr>
             </thead>
