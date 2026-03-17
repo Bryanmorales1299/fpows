@@ -21,23 +21,28 @@ app.use(express.static(__dirname));
 // Utility to aggressively clean environment variables from hidden characters or quotes
 const cleanEnv = (val, defaultValue = "") => {
     if (!val || val === "undefined" || val === "null" || val === "") return defaultValue;
-    // Remove all whitespace types, non-printable characters, and surrounding quotes
-    return val.toString().replace(/[\r\n\t\f\v]/g, '').trim().replace(/^"|"$/g, '');
+    // Remove all non-printable/hidden characters, then trim and remove quotes
+    return val.toString().replace(/[^\x20-\x7E]/g, '').trim().replace(/^"|"$/g, '');
 };
 
+// ... inside the code, update logs ...
+console.log(`[DEBUG] Raw process.env.SIMPRO_BASE_URL: ${JSON.stringify(process.env.SIMPRO_BASE_URL)}`);
+// ... and in getSimpro ...
+console.log(`[FETCHING] ${JSON.stringify(validatedUrl)}`);
+
 // SimPRO credentials
-console.log(`[DEBUG] Raw process.env.SIMPRO_BASE_URL: <${process.env.SIMPRO_BASE_URL}>`);
+console.log(`[DEBUG] Raw process.env.SIMPRO_BASE_URL: ${JSON.stringify(process.env.SIMPRO_BASE_URL)}`);
 const SIMPRO_BASE_URL = cleanEnv(process.env.SIMPRO_BASE_URL, "https://redmen-uat.simprosuite.com").replace(/\/$/, '');
 const SIMPRO_ACCESS_TOKEN = cleanEnv(process.env.SIMPRO_ACCESS_TOKEN, "6c6b91755ff14c8ff1ffb843c0737955d7a3a88a");
 
-console.log(`[INIT] SimPRO connectivity initialized for: <${SIMPRO_BASE_URL}>`);
+console.log(`[INIT] SimPRO connectivity initialized for: ${JSON.stringify(SIMPRO_BASE_URL)}`);
 
 // We'll use absolute URLs instead of baseURL to avoid Axios configuration issues in some environments
 const getSimpro = async (path) => {
     const rawUrl = `${SIMPRO_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`;
     try {
         const validatedUrl = new URL(rawUrl).toString();
-        console.log(`[FETCHING] ${validatedUrl}`);
+        console.log(`[FETCHING] ${JSON.stringify(validatedUrl)}`);
         return axios.get(validatedUrl, {
             headers: {
                 'Authorization': `Bearer ${SIMPRO_ACCESS_TOKEN}`,
