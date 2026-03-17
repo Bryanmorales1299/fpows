@@ -161,10 +161,10 @@
 
         @media print {
             @page { margin: 1cm; size: portrait; }
-            .control-bar, .print-btn, #error-banner, #loading-overlay { display: none !important; }
+            .control-bar, .print-btn, #error-banner, #loading-overlay, #agent-sidebar { display: none !important; }
             
             body { background: white; padding: 0; margin: 0; }
-            .page-wrapper { max-width: none; width: 100%; margin: 0; padding: 0; }
+            .page-wrapper { max-width: none; width: 100%; margin: 0; padding: 0; display: block !important; }
             
             #fpows-form { 
                 box-shadow: none !important; 
@@ -204,6 +204,81 @@
             
             .status-badge { border: 1px solid #000; padding: 1px 4px; }
         }
+
+        /* Agent Sidebar Styles */
+        .page-layout {
+            display: flex;
+            gap: 24px;
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        #fpows-form { flex: 1; min-width: 0; }
+
+        .agent-sidebar {
+            width: 320px;
+            position: sticky;
+            top: 20px;
+            height: fit-content;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .agent-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 16px;
+        }
+
+        .agent-avatar {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #e63946, #b22222);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 12px rgba(230, 57, 70, 0.3);
+        }
+
+        .agent-info h3 { margin: 0; font-size: 1.1rem; color: #333; }
+        .agent-info p { margin: 0; font-size: 0.8rem; color: #888; display: flex; align-items: center; gap: 4px; }
+        .agent-info .status-dot { width: 8px; height: 8px; background: #2a9d8f; border-radius: 50%; }
+
+        .insight-card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid #f0f0f0;
+            transition: transform 0.2s;
+        }
+        .insight-card:hover { transform: translateY(-2px); border-color: #e63946; }
+        .insight-card h4 { margin: 0 0 8px 0; font-size: 0.85rem; color: #444; display: flex; align-items: center; gap: 8px; }
+        .insight-card p { margin: 0; font-size: 0.82rem; color: #666; line-height: 1.4; }
+        .insight-card .tag { 
+            display: inline-block; 
+            margin-top: 10px; 
+            font-size: 0.7rem; 
+            font-weight: 600; 
+            padding: 2px 8px; 
+            border-radius: 4px; 
+            text-transform: uppercase;
+        }
+        .tag-alert { background: #fff1f2; color: #e63946; }
+        .tag-info { background: #f0f9ff; color: #0ea5e9; }
+        .tag-success { background: #f0fdf4; color: #22c55e; }
     </style>
 </head>
 <body>
@@ -231,8 +306,9 @@
 <div class="page-wrapper">
     <div id="error-banner"></div>
 
-    <!-- FPOWS Form -->
-    <div id="fpows-form">
+    <div class="page-layout">
+        <!-- FPOWS Form -->
+        <div id="fpows-form">
 
         <!-- Header -->
         <div class="form-header">
@@ -378,8 +454,31 @@
             <div>VKAM: <strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</strong></div>
         </div>
 
-    </div><!-- #fpows-form -->
-</div>
+        </div><!-- #fpows-form -->
+
+        <!-- Agent Sidebar -->
+        <aside class="agent-sidebar" id="agent-sidebar">
+            <div class="agent-header">
+                <div class="agent-avatar">🤖</div>
+                <div class="agent-info">
+                    <h3>FPOWS Agent</h3>
+                    <p><span class="status-dot"></span> Analyzing simPRO UAT...</p>
+                </div>
+            </div>
+
+            <div id="agent-insights">
+                <div class="insight-card">
+                    <h4> 👋 Hello!</h4>
+                    <p>Select a job from the list above to get real-time insights and data checks.</p>
+                </div>
+            </div>
+
+            <div class="insight-card" style="margin-top: auto; background: #333; color: white; border: none;">
+                <p style="font-size: 0.7rem; opacity: 0.8;">Agent version 1.2 · Connected to Company 1</p>
+            </div>
+        </aside>
+    </div><!-- .page-layout -->
+</div><!-- .page-wrapper -->
 
 <script>
     const $ = id => document.getElementById(id);
@@ -445,6 +544,59 @@
 
         $('fpows-form').classList.add('loaded');
         $('btn-print').style.display = 'inline-flex';
+        updateAgent(data);
+    }
+
+    function updateAgent(data) {
+        const insights = $('agent-insights');
+        insights.innerHTML = '';
+
+        // 1. Contact Insight
+        let contactHtml = '';
+        if (data.SiteContact?.Name && data.SiteContact.Name.toLowerCase() !== data.Client.toLowerCase()) {
+            contactHtml = `
+                <div class="insight-card">
+                    <h4>👤 Contact Discovery</h4>
+                    <p>I found <strong>${data.SiteContact.Name}</strong> as the primary contact for this job. All phone and email fields have been mapped from their profile.</p>
+                    <span class="tag tag-success">Matched</span>
+                </div>`;
+        } else {
+             contactHtml = `
+                <div class="insight-card">
+                    <h4>⚠️ Contact Check</h4>
+                    <p>No primary contact found. I've used client details as fallback. Verify "Site Contacts" in simPRO.</p>
+                    <span class="tag tag-alert">Review Needed</span>
+                </div>`;
+        }
+
+        // 2. Quote Insight
+        let quoteHtml = '';
+        const hasQuote = data.OutstandingWorks && data.OutstandingWorks.some(w => w.Quote);
+        if (hasQuote) {
+            quoteHtml = `
+                <div class="insight-card">
+                    <h4>💰 Linked Quote</h4>
+                    <p>Great! I detected a linked quote in simPRO UAT. This has been automatically added to the works table.</p>
+                    <span class="tag tag-info">Auto-Mapped</span>
+                </div>`;
+        } else {
+             quoteHtml = `
+                <div class="insight-card">
+                    <h4>🔍 Quote Scan</h4>
+                    <p>No linked quote detected for Job #${data.JobID}. If one exists, ensure it's linked in simPRO to see it here.</p>
+                    <span class="tag tag-info">Not Found</span>
+                </div>`;
+        }
+
+        // 3. AFSS Insight
+        let afssHtml = `
+            <div class="insight-card">
+                <h4>📅 AFSS Schedule</h4>
+                <p>The estimated AFSS due date is <strong>${data.AFSSDue}</strong>. confirmar this matches the standard 12-month issuance cycle for Job #${data.JobID}.</p>
+                <span class="tag tag-info">Schedule</span>
+            </div>`;
+
+        insights.innerHTML = contactHtml + quoteHtml + afssHtml;
     }
 
     function showError(msg) {
