@@ -3,6 +3,12 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import axios from 'axios';
+import dotenv from 'dotenv';
+
+// Only load .env if not in production to avoid shadowing Cloud Run vars
+if (process.env.NODE_ENV !== 'production') {
+    dotenv.config();
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -28,13 +34,14 @@ console.log(`[INIT] SimPRO connectivity initialized for: ${SIMPRO_BASE_URL}`);
 // We'll use absolute URLs instead of baseURL to avoid Axios configuration issues in some environments
 const getSimpro = async (path) => {
     const url = `${SIMPRO_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`;
+    console.log(`[FETCH] ${url}`);
     return axios.get(url, {
         headers: {
             'Authorization': `Bearer ${SIMPRO_ACCESS_TOKEN}`,
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         },
-        timeout: 10000 // 10s timeout for cloud stability
+        timeout: 10000 
     });
 };
 
@@ -48,7 +55,7 @@ app.get('/api/job/:id', async (req, res) => {
         // 1. Site Info
         let siteName = jobData.Site?.Name || "Unknown Site";
         
-        // 2. Contact Parse
+        // 2. Contact Parse from Description
         const desc = jobData.Description || "";
         const nameMatch = desc.match(/Name:\s*([^<\n\r]+)/i);
         const phoneMatch = desc.match(/Phone[^:]*:\s*([^<\n\r]+)/i);
@@ -94,7 +101,7 @@ app.get('/api/job/:id', async (req, res) => {
             if (quoteRes.data && quoteRes.data.length > 0) quoteNumber = quoteRes.data[0].ID;
         } catch (e) {}
 
-        res.json({
+        const formattedData = {
             JobID: jobId, Site: siteName,
             SiteContact: { Name: contactName || clientName, Phone: contactPhone || realPhone, Email: contactEmail || realEmail },
             Client: clientName, DateCallMade: dateIssued, DateCompleted: dateCompleted, AFSSDue: afssDate, 
@@ -103,11 +110,19 @@ app.get('/api/job/:id', async (req, res) => {
                 Month: new Date(jobData.DateIssued || new Date()).toLocaleString('default', { month: 'long' }),
                 Year: new Date(jobData.DateIssued || new Date()).getFullYear()
             },
-            OutstandingWorks: desc ? [{
-                Date: dateIssued, EquipmentType: "Maintenance", Issue: descriptionStrip.substring(0, 150),
-                Quote: quoteNumber, Job: jobId, Status: jobData.Stage || "pending"
-            }] : []
-        });
+            OutstandingWorks: []
+        };
+
+        if (descriptionStrip) {
+            formattedData.OutstandingWorks.push({
+                Date: dateIssued, EquipmentType: "General Maintenance",
+                Issue: descriptionStrip.substring(0, 150) + (descriptionStrip.length > 150 ? '...' : ''),
+                DARN: "", Quote: quoteNumber || "", Job: jobId, Responsibility: "", Comment: "Imported from Description",
+                Status: jobData.Stage || "pending"
+            });
+        }
+        
+        res.json(formattedData);
     } catch (err) {
         const errorMsg = err.response?.data?.errors?.[0]?.message || err.message;
         const failedUrl = err.config?.url || "Unknown URL";
@@ -128,15 +143,15 @@ app.get('/api/schedules/today', async (req, res) => {
         }));
         
         if (schedules.length === 0) {
-            schedules = [{ jobId: 423242, client: "Offline Demo: Jonny Macleod Village", site: "Offline Site", time: "09:00 AM" }];
+            schedules = [
+                { jobId: 423242, client: "Jonny Macleod Retirement Village", site: "48 Victory Parade Wallsond", time: "Recent" }
+            ];
         }
         res.json({ date: today, schedules });
     } catch (err) {
-        const errorMsg = err.response?.data?.errors?.[0]?.message || err.message;
-        const failedUrl = err.config?.url || "Unknown URL";
-        console.error(`[ERROR] Fetch failed for ${failedUrl}: ${errorMsg}`);
+        console.error("Error fetching jobs for dropdown:", err.message);
         res.json({ date: "Offline", schedules: [
-            { jobId: 423242, client: "Offline Demo: Jonny Macleod Village", site: "Offline Site", time: "09:00 AM" }
+            { jobId: 423242, client: "Offline Demo: Jonny Macleod Village", site: "Offline Site", time: "Recent" }
         ]});
     }
 });
