@@ -12,22 +12,29 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.static(__dirname));
 
-// SimPRO credentials
-const SIMPRO_ACCESS_TOKEN = "6c6b91755ff14c8ff1ffb843c0737955d7a3a88a";
+// Utility to aggressively clean environment variables from hidden characters or quotes
+const cleanEnv = (val, defaultValue = "") => {
+    if (!val) return defaultValue;
+    // Remove all whitespace types, non-printable characters, and surrounding quotes
+    return val.toString().replace(/[\r\n\t\f\v]/g, '').trim().replace(/^"|"$/g, '');
+};
 
-// We'll use absolute URLs instead of baseURL to avoid Axios configuration issues in Cloud Run
+// SimPRO credentials
+const SIMPRO_BASE_URL = cleanEnv(process.env.SIMPRO_BASE_URL, "https://redmen-uat.simprosuite.com").replace(/\/$/, '');
+const SIMPRO_ACCESS_TOKEN = cleanEnv(process.env.SIMPRO_ACCESS_TOKEN, "6c6b91755ff14c8ff1ffb843c0737955d7a3a88a");
+
+console.log(`[INIT] SimPRO connectivity initialized for: ${SIMPRO_BASE_URL}`);
+
+// We'll use absolute URLs instead of baseURL to avoid Axios configuration issues in some environments
 const getSimpro = async (path) => {
-    // HARDCODED URL to solve the "Invalid URL" mystery once and for all
-    const base = "https://redmen-uat.simprosuite.com";
-    const url = `${base}${path.startsWith('/') ? '' : '/'}${path}`;
-    console.log(`[FETCHING] ${url}`);
-    
+    const url = `${SIMPRO_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`;
     return axios.get(url, {
         headers: {
             'Authorization': `Bearer ${SIMPRO_ACCESS_TOKEN}`,
             'Content-Type': 'application/json',
             'Accept': 'application/json'
-        }
+        },
+        timeout: 10000 // 10s timeout for cloud stability
     });
 };
 
