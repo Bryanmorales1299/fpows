@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FPOWS Automation – REDMEN Fire Protection</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --red: #cc2222; --dark: #1a1a2e; --accent: #e63946; --bg: #f0f2f5; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Outfit', sans-serif; background: var(--bg); min-height: 100vh; }
+
+        /* ── Control Bar ── */
+        .control-bar {
+            position: sticky; top: 0; z-index: 100;
+            background: var(--dark);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 28px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            gap: 16px; flex-wrap: wrap;
+        }
+        .control-bar .brand { color: #fff; font-size: 1rem; font-weight: 700; white-space: nowrap; }
+        .control-bar .brand span { color: var(--accent); }
+
+        .search-row { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 260px; max-width: 520px; }
+        .search-row input {
+            flex: 1; padding: 9px 16px; border-radius: 8px; border: 2px solid #344;
+            background: #2a2a40; color: #fff; font-family: 'Outfit', sans-serif;
+            font-size: 0.9rem; outline: none; transition: border-color 0.2s;
+        }
+        .search-row input:focus { border-color: var(--accent); }
+        .search-row input::placeholder { color: #667; }
+
+        .btn {
+            background: linear-gradient(135deg, #e63946, #c1121f);
+            color: white; border: none; padding: 9px 22px;
+            font-size: 0.9rem; font-weight: 700; border-radius: 8px;
+            cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 7px;
+            transition: all 0.25s ease; box-shadow: 0 3px 12px rgba(230,57,70,0.3);
+        }
+        .btn:hover { transform: scale(1.04); box-shadow: 0 5px 18px rgba(230,57,70,0.45); }
+        .btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+        .btn-outline {
+            background: transparent; border: 2px solid #445;
+            color: #ccc; box-shadow: none;
+        }
+        .btn-outline:hover { border-color: #aaa; color: #fff; box-shadow: none; }
+
+        .status-pill {
+            padding: 5px 13px; border-radius: 20px; font-size: 0.78rem; font-weight: 600;
+            white-space: nowrap;
+        }
+        .pill-waiting  { background: #2d2d44; color: #9ea7d0; }
+        .pill-loading  { background: #1a3a5c; color: #7ec8f5; }
+        .pill-done     { background: #1a3d2e; color: #6ee7a0; }
+        .pill-error    { background: #3d1a1a; color: #f59a9a; }
+
+        /* ── Page wrapper ── */
+        .page-wrapper { max-width: 1200px; margin: 28px auto; padding: 0 20px 60px; }
+
+        /* ── Error banner ── */
+        #error-banner {
+            display: none; background: #fff2f2; border: 1px solid #f5c0c0;
+            color: #cc2222; padding: 12px 18px; border-radius: 10px;
+            margin-bottom: 18px; font-size: 0.9rem;
+        }
+
+        /* ── FPOWS Form ── */
+        #fpows-form {
+            background: #fff; border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+            opacity: 0.3; transition: opacity 0.5s ease;
+        }
+        #fpows-form.loaded { opacity: 1; }
+
+        .form-header {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            padding: 18px 24px; border-bottom: 3px solid #e8e8e8;
+        }
+        .logo-block {
+            width: 190px; height: 72px; background: #cc2222;
+            border-radius: 8px; display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: 700; font-size: 1.4rem; letter-spacing: 3px;
+        }
+        .company-info { text-align: right; font-size: 0.73rem; color: #444; line-height: 1.65; }
+        .company-info strong { font-size: 0.82rem; color: #111; }
+
+        .form-title { text-align: center; padding: 16px 24px 10px; border-bottom: 2px solid #eee; }
+        .form-title h1 { font-size: 1.45rem; font-weight: 700; color: #111; text-transform: uppercase; letter-spacing: 1px; }
+        .form-title h2 { font-size: 1rem; font-weight: 400; color: #444; margin-top: 4px; }
+        .form-title h2 span { color: var(--red); font-weight: 700; }
+
+        /* Meta grids */
+        .meta-row { display: grid; border-bottom: 1px solid #ddd; }
+        .meta-cell { padding: 8px 14px; border-right: 1px solid #e0e0e0; }
+        .meta-cell:last-child { border-right: none; }
+        .meta-cell .lbl {
+            font-size: 0.62rem; font-weight: 700; text-transform: uppercase;
+            color: #999; letter-spacing: 0.5px; margin-bottom: 3px;
+        }
+        .meta-cell .val { font-size: 0.83rem; color: #111; font-weight: 500; min-height: 17px; }
+        .placeholder-text { color: #ccc; font-style: italic; }
+
+        /* Table */
+        .works-table { width: 100%; border-collapse: collapse; }
+        .works-table th {
+            background: #2c2c2c; color: #fff; padding: 7px 10px;
+            font-size: 0.68rem; text-transform: uppercase; font-weight: 700;
+            letter-spacing: 0.4px; text-align: left; border-right: 1px solid #444;
+        }
+        .works-table th:last-child { border-right: none; }
+        .works-table td {
+            padding: 8px 10px; font-size: 0.79rem; color: #222;
+            border: 1px solid #e8e8e8; vertical-align: top;
+        }
+        .works-table tr:nth-child(even) td { background: #f9f9f9; }
+        .empty-row td { height: 26px; }
+
+        .status-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; }
+        .s-completed { background: #e6f4ea; color: #1e7e34; }
+        .s-pending   { background: #fff3cd; color: #856404; }
+        .s-na        { background: #e8e8e8; color: #777; }
+
+        .rec-title {
+            text-align: center; padding: 12px; font-size: 0.95rem;
+            font-weight: 700; text-transform: uppercase;
+            border-top: 3px solid #ddd; border-bottom: 1px solid #ddd;
+            letter-spacing: 0.5px; color: #111;
+        }
+        .footer-row {
+            display: flex; justify-content: flex-end; gap: 30px;
+            padding: 12px 24px; border-top: 2px solid #ddd; font-size: 0.79rem; color: #555;
+        }
+        .footer-row strong { margin-left: 8px; color: #111; min-width: 80px; display: inline-block; border-bottom: 1px solid #999; }
+
+        .print-btn {
+            display: none; margin: 20px auto; padding: 11px 30px;
+            background: var(--dark); color: #fff; border: none; border-radius: 8px;
+            font-size: 0.95rem; font-weight: 600; cursor: pointer;
+            font-family: 'Outfit', sans-serif;
+        }
+        .print-btn.visible { display: block; }
+
+        /* Loading overlay */
+        #loading-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(26,26,46,0.55); backdrop-filter: blur(4px);
+            z-index: 500; align-items: center; justify-content: center;
+            flex-direction: column; gap: 14px; color: white; font-size: 1.1rem;
+        }
+        #loading-overlay.visible { display: flex; }
+        .spinner {
+            width: 48px; height: 48px; border: 4px solid rgba(255,255,255,0.15);
+            border-top-color: var(--accent); border-radius: 50%;
+            animation: spin 0.75s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media print {
+            .control-bar, .print-btn, #error-banner { display: none !important; }
+            #fpows-form { box-shadow: none; border-radius: 0; }
+            body { background: white; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Control Bar -->
+<div class="control-bar">
+    <div class="brand">REDMEN Fire Protection · <span>simPRO → FPOWS</span></div>
+    <div class="search-row">
+        <input type="number" id="job-id-input" placeholder="Enter simPRO Job ID…" min="1">
+        <button class="btn" id="btn-fetch">🔍 Fetch Job</button>
+        <button class="btn btn-outline" id="btn-print" style="display:none">🖨 Print</button>
+    </div>
+    <div id="status-pill" class="status-pill pill-waiting">⏳ Enter a Job ID</div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loading-overlay">
+    <div class="spinner"></div>
+    <div id="loading-text">Fetching job data from simPRO…</div>
+</div>
+
+<div class="page-wrapper">
+    <div id="error-banner"></div>
+
+    <!-- FPOWS Form -->
+    <div id="fpows-form">
+
+        <!-- Header -->
+        <div class="form-header">
+            <div class="logo-block">REDMEN</div>
+            <div class="company-info">
+                <strong>Labrobin Pty Ltd</strong><br>
+                T/A Redmen Fire Protection<br>
+                ABN 72 079 715 867<br>
+                Phone: 1300 733 836<br>
+                PO Box 7027 Mannering Park NSW 2259<br>
+                Email: info@redmen.com.au<br>
+                Web: www.redmen.com.au
+            </div>
+        </div>
+
+        <!-- Title -->
+        <div class="form-title">
+            <h1>Fire Protection Outstanding Works Status</h1>
+            <h2>Call Sheet – <span>FPOWS</span></h2>
+        </div>
+
+        <!-- Row 1: Date / Client / Site -->
+        <div class="meta-row" style="grid-template-columns:1fr 2fr 2fr;">
+            <div class="meta-cell">
+                <div class="lbl">Date Form Completed</div>
+                <div class="val" id="f-date"><span class="placeholder-text">—</span></div>
+            </div>
+            <div class="meta-cell">
+                <div class="lbl">Client</div>
+                <div class="val" id="f-client"><span class="placeholder-text">—</span></div>
+            </div>
+            <div class="meta-cell">
+                <div class="lbl">Site</div>
+                <div class="val" id="f-site"><span class="placeholder-text">—</span></div>
+            </div>
+        </div>
+
+        <!-- Row 2: Contact row -->
+        <div class="meta-row" style="grid-template-columns:1fr 1fr 1fr 1.6fr 1fr 1fr;">
+            <div class="meta-cell">
+                <div class="lbl">Date Call Made</div>
+                <div class="val" id="f-call-date"><span class="placeholder-text">—</span></div>
+            </div>
+            <div class="meta-cell">
+                <div class="lbl">Site Contact</div>
+                <div class="val" id="f-contact"><span class="placeholder-text">—</span></div>
+            </div>
+            <div class="meta-cell">
+                <div class="lbl">Phone #</div>
+                <div class="val" id="f-phone"><span class="placeholder-text">—</span></div>
+            </div>
+            <div class="meta-cell">
+                <div class="lbl">Email</div>
+                <div class="val" id="f-email" style="font-size:0.72rem"><span class="placeholder-text">—</span></div>
+            </div>
+            <div class="meta-cell">
+                <div class="lbl">AFSS Due</div>
+                <div class="val" id="f-afss"><span class="placeholder-text">—</span></div>
+            </div>
+            <div class="meta-cell">
+                <div class="lbl">Form # (Job ID)</div>
+                <div class="val" id="f-jobid"><span class="placeholder-text">—</span></div>
+            </div>
+        </div>
+
+        <!-- Row 3: Service dates -->
+        <div class="meta-row" style="grid-template-columns:1fr 1fr 1fr 1fr 1fr 1fr; border-bottom:2px solid #ccc;">
+            <div class="meta-cell">
+                <div class="lbl">6 Monthly Service Due</div>
+                <div class="val" id="f-6mo"><span class="placeholder-text">—</span></div>
+            </div>
+            <div class="meta-cell">
+                <div class="lbl">Month</div>
+                <div class="val" id="f-6mo-month"><span class="placeholder-text">—</span></div>
+            </div>
+            <div class="meta-cell">
+                <div class="lbl">Year</div>
+                <div class="val" id="f-6mo-year"><span class="placeholder-text">—</span></div>
+            </div>
+            <div class="meta-cell">
+                <div class="lbl">12 Monthly Service Due</div>
+                <div class="val" id="f-12mo"><span class="placeholder-text">—</span></div>
+            </div>
+            <div class="meta-cell">
+                <div class="lbl">Month</div>
+                <div class="val" id="f-12mo-month"><span class="placeholder-text">—</span></div>
+            </div>
+            <div class="meta-cell">
+                <div class="lbl">Year</div>
+                <div class="val" id="f-12mo-year"><span class="placeholder-text">—</span></div>
+            </div>
+        </div>
+
+        <!-- Outstanding Works Table -->
+        <table class="works-table">
+            <thead>
+                <tr>
+                    <th style="width:6%">Date</th>
+                    <th style="width:10%">Equipment Type</th>
+                    <th style="width:20%">Issue</th>
+                    <th style="width:7%">DARN #</th>
+                    <th style="width:7%">Quote #</th>
+                    <th style="width:7%">Job #</th>
+                    <th style="width:10%">Responsibility</th>
+                    <th style="width:25%">Comment</th>
+                    <th style="width:8%">Status</th>
+                </tr>
+            </thead>
+            <tbody id="f-works-body">
+                <tr class="empty-row"><td colspan="9">&nbsp;</td></tr>
+                <tr class="empty-row"><td colspan="9">&nbsp;</td></tr>
+                <tr class="empty-row"><td colspan="9">&nbsp;</td></tr>
+                <tr class="empty-row"><td colspan="9">&nbsp;</td></tr>
+                <tr class="empty-row"><td colspan="9">&nbsp;</td></tr>
+                <tr class="empty-row"><td colspan="9">&nbsp;</td></tr>
+            </tbody>
+        </table>
+
+        <!-- Recommendations -->
+        <div class="rec-title">Recommendations Made to Client</div>
+        <table class="works-table">
+            <thead>
+                <tr>
+                    <th style="width:9%">Date of Discussion</th>
+                    <th style="width:11%">Equipment Type</th>
+                    <th style="width:26%">Issue</th>
+                    <th style="width:13%">Responsibility</th>
+                    <th style="width:30%">Comment</th>
+                    <th style="width:11%">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="empty-row"><td colspan="6">&nbsp;</td></tr>
+                <tr class="empty-row"><td colspan="6">&nbsp;</td></tr>
+                <tr class="empty-row"><td colspan="6">&nbsp;</td></tr>
+                <tr class="empty-row"><td colspan="6">&nbsp;</td></tr>
+            </tbody>
+        </table>
+
+        <!-- Footer -->
+        <div class="footer-row">
+            <div>CRM simPRO Job #: <strong id="f-footer-job">__________</strong></div>
+            <div>VKAM: <strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</strong></div>
+        </div>
+
+    </div><!-- #fpows-form -->
+</div>
+
+<script>
+    const $ = id => document.getElementById(id);
+    const setVal = (id, val) => {
+        const el = $(id);
+        if (el) el.innerHTML = val || '<span class="placeholder-text">—</span>';
+    };
+
+    function badgeHtml(status) {
+        const s = (status || '').toLowerCase();
+        if (s === 'completed') return '<span class="status-badge s-completed">✔ Completed</span>';
+        if (s === 'pending')   return '<span class="status-badge s-pending">⏳ Pending</span>';
+        return '<span class="status-badge s-na">—</span>';
+    }
+
+    function renderForm(data) {
+        const today = new Date().toLocaleDateString('en-AU');
+        setVal('f-date', today);
+        setVal('f-call-date', today);
+        setVal('f-client', data.Client);
+        setVal('f-site', data.Site);
+        setVal('f-contact', data.SiteContact?.Name);
+        setVal('f-phone', data.SiteContact?.Phone);
+        setVal('f-email', data.SiteContact?.Email);
+        setVal('f-afss', data.AFSSDue);
+        setVal('f-jobid', data.JobID);
+        setVal('f-footer-job', data.JobID);
+        setVal('f-6mo', data.ServiceDue?.Type || '6 Monthly');
+        setVal('f-6mo-month', data.ServiceDue?.Month);
+        setVal('f-6mo-year', data.ServiceDue?.Year);
+        setVal('f-12mo', '12 Monthly');
+        setVal('f-12mo-month', '');
+        setVal('f-12mo-year', '');
+
+        const tbody = $('f-works-body');
+        tbody.innerHTML = '';
+        const works = data.OutstandingWorks || [];
+
+        if (works.length > 0) {
+            works.forEach(w => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${w.Date || ''}</td>
+                    <td>${w.EquipmentType || ''}</td>
+                    <td>${w.Issue || ''}</td>
+                    <td>${w.DARN || ''}</td>
+                    <td>${w.Quote || ''}</td>
+                    <td>${w.Job || ''}</td>
+                    <td>${w.Responsibility || ''}</td>
+                    <td>${w.Comment || ''}</td>
+                    <td>${badgeHtml(w.Status)}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Fill remaining empty rows
+        const fill = Math.max(0, 8 - works.length);
+        for (let i = 0; i < fill; i++) {
+            const tr = document.createElement('tr');
+            tr.className = 'empty-row';
+            tr.innerHTML = '<td colspan="9">&nbsp;</td>';
+            tbody.appendChild(tr);
+        }
+
+        $('fpows-form').classList.add('loaded');
+        $('btn-print').style.display = 'inline-flex';
+    }
+
+    function showError(msg) {
+        const el = $('error-banner');
+        el.style.display = 'block';
+        el.textContent = '⚠️ ' + msg;
+    }
+
+    function hideError() {
+        $('error-banner').style.display = 'none';
+    }
+
+    async function fetchJob() {
+        const jobId = $('job-id-input').value.trim();
+        if (!jobId) { showError('Please enter a simPRO Job ID.'); return; }
+
+        hideError();
+        $('btn-fetch').disabled = true;
+        $('loading-overlay').classList.add('visible');
+        $('status-pill').className = 'status-pill pill-loading';
+        $('status-pill').textContent = '🔄 Fetching from simPRO…';
+
+        try {
+            const res = await fetch(`/api/job/${jobId}`);
+            const data = await res.json();
+
+            if (!res.ok || data.error) {
+                throw new Error(data.error || `HTTP ${res.status}`);
+            }
+
+            renderForm(data);
+            $('status-pill').className = 'status-pill pill-done';
+            $('status-pill').textContent = `✅ Job #${jobId} loaded`;
+            $('btn-fetch').textContent = '🔄 Reload';
+        } catch (err) {
+            showError(err.message);
+            $('status-pill').className = 'status-pill pill-error';
+            $('status-pill').textContent = '❌ Error';
+        } finally {
+            $('loading-overlay').classList.remove('visible');
+            $('btn-fetch').disabled = false;
+        }
+    }
+
+    $('btn-fetch').addEventListener('click', fetchJob);
+    $('job-id-input').addEventListener('keydown', e => { if (e.key === 'Enter') fetchJob(); });
+    $('btn-print').addEventListener('click', () => window.print());
+</script>
+
+<script>
+    // Auto-injected by Agent FPOWS Generator
+    const PUSHED_DATA = {
+  "JobID": 423242,
+  "Site": "48 Victory Parade Wallsond",
+  "SiteContact": {
+    "Name": "Kim Simpson",
+    "Phone": "02 4951 6637",
+    "Email": "kang@jonnymacleodretirement.com.au"
+  },
+  "Client": "Jonny Macleod Retirement Village",
+  "AFSSDue": "01-10-2025",
+  "ServiceDue": {
+    "Type": "6 Monthly",
+    "Month": "March",
+    "Year": 2025
+  },
+  "OutstandingWorks": [
+    {
+      "Date": "",
+      "EquipmentType": "Fire Doors",
+      "Issue": "5 yearly overhaul for 3 x landing valves onsite",
+      "DARN": "418348",
+      "Quote": "145225",
+      "Job": "423242",
+      "Responsibility": "",
+      "Comment": "Our technician was able to complete the job back in July 3, 2025 all 3 landing valves were replaced and up to date.",
+      "Status": "completed"
+    },
+    {
+      "Date": "",
+      "EquipmentType": "FIP",
+      "Issue": "FIP battery replacement and detector fault",
+      "DARN": "",
+      "Quote": "145104",
+      "Job": "427896",
+      "Responsibility": "non DARN quote",
+      "Comment": "panel batteries and a faulty detector replaced by our technician FIP is in normal mode job completed in May 16, 2025.",
+      "Status": "completed"
+    }
+  ]
+};
+    
+    document.addEventListener("DOMContentLoaded", () => {
+        // Hide the top control bar since this is a pre-rendered static output
+        document.querySelector('.control-bar').style.display = 'none';
+        
+        // Hide overlay safely
+        document.getElementById('loading-overlay').classList.remove('visible');
+        
+        // Call the natively existing render function defined in index.html
+        renderForm(PUSHED_DATA);
+        
+        console.log("FPOWS form fully populated via static injection.");
+    });
+</script>
+</body>
+
+</html>

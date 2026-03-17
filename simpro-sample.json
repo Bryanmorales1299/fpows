@@ -1,0 +1,40 @@
+{
+  "JobID": 423242,
+  "Site": "48 Victory Parade Wallsond",
+  "SiteContact": {
+    "Name": "Kim Simpson",
+    "Phone": "02 4951 6637",
+    "Email": "kang@jonnymacleodretirement.com.au"
+  },
+  "Client": "Jonny Macleod Retirement Village",
+  "AFSSDue": "01-10-2025",
+  "ServiceDue": {
+    "Type": "6 Monthly",
+    "Month": "March",
+    "Year": 2025
+  },
+  "OutstandingWorks": [
+    {
+      "Date": "",
+      "EquipmentType": "Fire Doors",
+      "Issue": "5 yearly overhaul for 3 x landing valves onsite",
+      "DARN": "418348",
+      "Quote": "145225",
+      "Job": "423242",
+      "Responsibility": "",
+      "Comment": "Our technician was able to complete the job back in July 3, 2025 all 3 landing valves were replaced and up to date.",
+      "Status": "completed"
+    },
+    {
+      "Date": "",
+      "EquipmentType": "FIP",
+      "Issue": "FIP battery replacement and detector fault",
+      "DARN": "",
+      "Quote": "145104",
+      "Job": "427896",
+      "Responsibility": "non DARN quote",
+      "Comment": "panel batteries and a faulty detector replaced by our technician FIP is in normal mode job completed in May 16, 2025.",
+      "Status": "completed"
+    }
+  ]
+}

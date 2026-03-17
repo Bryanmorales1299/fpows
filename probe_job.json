@@ -1,0 +1,9 @@
+{
+  "ID": 386716,
+  "Description": "<div style=\"font-size: 10pt;\"><strong>This invoice is the final billing for the remainder of your maintenance agreement as per the cancellation clause.</strong></div><div style=\"font-size: 10pt;\">&nbsp;</div><div style=\"font-size: 10pt;\">Contract Quotation No:&nbsp;128066</div><div style=\"font-size: 10pt;\">Contract Terms: 3 Years</div><div style=\"font-size: 10pt;\">Contract Annual Fee: $690.00 + GST</div><div style=\"font-size: 10pt;\">Contract Total Fee (Annual Fee * 3 Years): $2,070.00 + GST</div><div style=\"font-size: 10pt;\">&nbsp;</div><div style=\"font-size: 10pt;\">Total Billed from Contract: $ 330.00 + GST (Refer to Tax Invoice #1500011835)</div><div style=\"font-size: 10pt;\">&nbsp;</div><div style=\"font-size: 10pt;\"><strong>Total Balance from the Remainder of Contract: $1,740.00 + GST</strong></div><div style=\"font-size: 10pt;\">&nbsp;</div><div style=\"font-size: 10pt;\"><strong>EARLY CANCELLATION OF AGREEMENT</strong><br />If this agreement is cancelled prior to it's agreed end date Liverpool Fire Services reserve the right to invoice the client the balance of the agreement for which the client shall be held liable. This is due to pricing is calculated on the length of the agreement.</div>",
+  "Total": {
+    "ExTax": 1740,
+    "Tax": 174,
+    "IncTax": 1914
+  }
+}
