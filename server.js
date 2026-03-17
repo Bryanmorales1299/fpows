@@ -145,7 +145,8 @@ app.get('/api/schedules/today', async (req, res) => {
                 const dateObj = new Date(job.DateIssued);
                 const day = dateObj.getDate();
                 const mon = dateObj.toLocaleString('default', { month: 'short' });
-                formattedDate = `${day} ${mon}`;
+                const year = dateObj.getFullYear();
+                formattedDate = `${day} ${mon} ${year}`;
             }
 
             return {
