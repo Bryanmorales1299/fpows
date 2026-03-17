@@ -653,7 +653,8 @@
                 data.schedules.forEach(s => {
                     const opt = document.createElement('option');
                     opt.value = s.jobId;
-                    opt.textContent = `Job #${s.jobId} - ${s.client || 'Unknown Client'}`;
+                    const datePrefix = s.time && s.time !== 'Recent' ? `[${s.time}] ` : '';
+                    opt.textContent = `${datePrefix}Job #${s.jobId} - ${s.client || 'Unknown Client'}`;
                     select.appendChild(opt);
                 });
             } else {

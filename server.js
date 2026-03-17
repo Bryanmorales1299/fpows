@@ -137,13 +137,24 @@ app.get('/api/job/:id', async (req, res) => {
 app.get('/api/schedules/today', async (req, res) => {
     try {
         const today = new Date().toISOString().split('T')[0];
-        const jobsRes = await getSimpro('/api/v1.0/companies/1/jobs/?pageSize=50&columns=ID,Name,Customer');
+        const jobsRes = await getSimpro('/api/v1.0/companies/1/jobs/?pageSize=50&columns=ID,Name,Customer,DateIssued');
         
-        let schedules = jobsRes.data.map(job => ({
-            jobId: job.ID,
-            client: job.Customer ? (job.Customer.CompanyName || `${job.Customer.GivenName || ''} ${job.Customer.FamilyName || ''}`.trim() || job.Name) : job.Name || "SimPRO Job",
-            site: "simPRO Site", time: "Recent"
-        }));
+        let schedules = jobsRes.data.map(job => {
+            let formattedDate = "";
+            if (job.DateIssued) {
+                const dateObj = new Date(job.DateIssued);
+                const day = dateObj.getDate();
+                const mon = dateObj.toLocaleString('default', { month: 'short' });
+                formattedDate = `${day} ${mon}`;
+            }
+
+            return {
+                jobId: job.ID,
+                client: job.Customer ? (job.Customer.CompanyName || `${job.Customer.GivenName || ''} ${job.Customer.FamilyName || ''}`.trim() || job.Name) : job.Name || "SimPRO Job",
+                site: "simPRO Site", 
+                time: formattedDate || "Recent"
+            };
+        });
         
         if (schedules.length === 0) {
             schedules = [
