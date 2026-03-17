@@ -5,8 +5,6 @@ import fs from 'fs';
 import axios from 'axios';
 import dotenv from 'dotenv';
 
-dotenv.config();
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -15,12 +13,16 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.static(__dirname));
 
+// dotenv.config(); // Removed to avoid shadowing in Cloud Run
+
+console.log(`[DEBUG] Available Env Keys: ${Object.keys(process.env).filter(k => k.startsWith('SIMPRO')).join(', ')}`);
+
 // SimPRO credentials
 const SIMPRO_BASE_URL = (process.env.SIMPRO_BASE_URL || "").trim().replace(/^"|"$/g, '');
 const SIMPRO_ACCESS_TOKEN = (process.env.SIMPRO_ACCESS_TOKEN || "").trim().replace(/^"|"$/g, '');
 
-console.log(`[INIT] SimPRO Base URL: ${SIMPRO_BASE_URL}`);
-console.log(`[INIT] SimPRO Token (first 5): ${SIMPRO_ACCESS_TOKEN.substring(0, 5)}...`);
+console.log(`[INIT] SimPRO Base URL: [${SIMPRO_BASE_URL}]`);
+console.log(`[INIT] SimPRO Token (first 5): [${SIMPRO_ACCESS_TOKEN.substring(0, 5)}]...`);
 
 if (!SIMPRO_BASE_URL) {
     console.error("[CRITICAL] SIMPRO_BASE_URL is missing!");
