@@ -12,97 +12,82 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.static(__dirname));
 
-// SimPRO credentials with hardcoded defaults for Cloud Run fallback
-const SIMPRO_BASE_URL = (process.env.SIMPRO_BASE_URL || "https://redmen-uat.simprosuite.com").trim().replace(/^"|"$/g, '');
+// SimPRO credentials
+const SIMPRO_BASE_URL = (process.env.SIMPRO_BASE_URL || "https://redmen-uat.simprosuite.com").trim().replace(/^"|"$/g, '').replace(/\/$/, '');
 const SIMPRO_ACCESS_TOKEN = (process.env.SIMPRO_ACCESS_TOKEN || "6c6b91755ff14c8ff1ffb843c0737955d7a3a88a").trim().replace(/^"|"$/g, '');
 
-console.log(`[INIT] Using SimPRO Base URL: [${SIMPRO_BASE_URL}]`);
+console.log(`[INIT] Fixed SIMPRO_BASE_URL: [${SIMPRO_BASE_URL}]`);
 
-if (!SIMPRO_BASE_URL) {
-    console.error("[CRITICAL] SIMPRO_BASE_URL is missing!");
-}
-
-const simproClient = axios.create({
-    baseURL: SIMPRO_BASE_URL,
-    headers: {
-        'Authorization': `Bearer ${SIMPRO_ACCESS_TOKEN}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-    }
-});
+// We'll use absolute URLs instead of baseURL to avoid Axios configuration issues in Cloud Run
+const getSimpro = async (path) => {
+    const url = `${SIMPRO_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`;
+    console.log(`[FETCH] ${url}`);
+    return axios.get(url, {
+        headers: {
+            'Authorization': `Bearer ${SIMPRO_ACCESS_TOKEN}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
+    });
+};
 
 // Mock MCP tool behavior via REST API for FPOWS data
 app.get('/api/job/:id', async (req, res) => {
     const jobId = req.params.id;
-    console.log(`[REAL DATA] Fetching Job #${jobId}...`);
-    
     try {
-        const jobRes = await simproClient.get(`/api/v1.0/companies/1/jobs/${jobId}`);
+        const jobRes = await getSimpro(`/api/v1.0/companies/1/jobs/${jobId}`);
         const jobData = jobRes.data;
 
         // 1. Site Info
         let siteName = jobData.Site?.Name || "Unknown Site";
         
-        // 2. Extract specific contact info from Description
+        // 2. Contact Parse
         const desc = jobData.Description || "";
         const nameMatch = desc.match(/Name:\s*([^<\n\r]+)/i);
         const phoneMatch = desc.match(/Phone[^:]*:\s*([^<\n\r]+)/i);
         const emailMatch = desc.match(/Email:\s*([^<\n\r]+)/i);
 
-        // 3. Contact Fallback Logic
-        let contactName = jobData.Contact?.Name || "";
-        let contactPhone = jobData.Contact?.Phone || "";
-        let contactEmail = jobData.Contact?.Email || "";
-
-        if (!contactName && nameMatch) contactName = nameMatch[1].trim();
-        if (!contactPhone && phoneMatch) contactPhone = phoneMatch[1].trim();
-        if (!contactEmail && emailMatch) contactEmail = emailMatch[1].trim();
+        let contactName = jobData.Contact?.Name || (nameMatch ? nameMatch[1].trim() : "");
+        let contactPhone = jobData.Contact?.Phone || (phoneMatch ? phoneMatch[1].trim() : "");
+        let contactEmail = jobData.Contact?.Email || (emailMatch ? emailMatch[1].trim() : "");
 
         if (!contactName && jobData.Site?.ID) {
             try {
-                const siteContactsRes = await simproClient.get(`/api/v1.0/companies/1/sites/${jobData.Site.ID}/contacts/`);
-                if (siteContactsRes.data && siteContactsRes.data.length > 0) {
-                    const sc = siteContactsRes.data[0];
-                    contactName = `${sc.GivenName || ''} ${sc.FamilyName || ''}`.trim();
+                const scRes = await getSimpro(`/api/v1.0/companies/1/sites/${jobData.Site.ID}/contacts/`);
+                if (scRes.data && scRes.data.length > 0) {
+                    contactName = `${scRes.data[0].GivenName || ''} ${scRes.data[0].FamilyName || ''}`.trim();
                 }
-            } catch (e) { }
+            } catch (e) {}
         }
 
         // 4. Customer Info
-        let clientName = "Unknown Client";
+        let clientName = jobData.Customer?.CompanyName || jobData.Customer?.Name || "Unknown Client";
         let realPhone = "";
         let realEmail = "";
 
-        if (jobData.Customer && jobData.Customer.ID) {
+        if (jobData.Customer?.ID) {
             try {
-                const custRes = await simproClient.get(`/api/v1.0/companies/1/customers/${jobData.Customer.ID}`);
+                const custRes = await getSimpro(`/api/v1.0/companies/1/customers/${jobData.Customer.ID}`);
                 const cust = custRes.data;
-                clientName = cust.CompanyName || `${cust.GivenName || ''} ${cust.FamilyName || ''}`.trim() || cust.Name;
+                clientName = cust.CompanyName || `${cust.GivenName || ''} ${cust.FamilyName || ''}`.trim() || clientName;
                 if (!contactPhone) realPhone = cust.Phone || cust.AltPhone || "";
                 if (!contactEmail) realEmail = cust.Email || "";
-            } catch (e) {
-                clientName = jobData.Customer.CompanyName || jobData.Customer.Name || "Unknown Client";
-            }
+            } catch (e) {}
         }
 
-        // ... rest of the mapping ...
+        // 5. Formatting
         const dateIssued = jobData.DateIssued ? new Date(jobData.DateIssued).toLocaleDateString('en-AU') : "Not Issued";
         const dateCompleted = jobData.CompletedDate ? new Date(jobData.CompletedDate).toLocaleDateString('en-AU') : "Pending";
         const afssDate = jobData.DateIssued ? new Date(new Date(jobData.DateIssued).setFullYear(new Date(jobData.DateIssued).getFullYear() + 1)).toLocaleDateString('en-AU') : "Check simPRO";
         const descriptionStrip = desc.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 
-        // 7. Quote Discovery
         let quoteNumber = "";
         try {
-            const quoteRes = await simproClient.get(`/api/v1.0/companies/1/quotes/?JobID=${jobId}`);
-            if (quoteRes.data && quoteRes.data.length > 0) {
-                quoteNumber = quoteRes.data[0].ID;
-            } else if (jobData.Quote && jobData.Quote.ID) {
-                 quoteNumber = jobData.Quote.ID;
-            }
-        } catch (e) { }
+            const quoteRes = await getSimpro(`/api/v1.0/companies/1/quotes/?JobID=${jobId}`);
+            if (quoteRes.data && quoteRes.data.length > 0) quoteNumber = quoteRes.data[0].ID;
+        } catch (e) {}
 
-        const formattedData = {
+        res.json({
             JobID: jobId, Site: siteName,
             SiteContact: { Name: contactName || clientName, Phone: contactPhone || realPhone, Email: contactEmail || realEmail },
             Client: clientName, DateCallMade: dateIssued, DateCompleted: dateCompleted, AFSSDue: afssDate, 
@@ -111,55 +96,40 @@ app.get('/api/job/:id', async (req, res) => {
                 Month: new Date(jobData.DateIssued || new Date()).toLocaleString('default', { month: 'long' }),
                 Year: new Date(jobData.DateIssued || new Date()).getFullYear()
             },
-            OutstandingWorks: []
-        };
-
-        if (descriptionStrip) {
-            formattedData.OutstandingWorks.push({
-                Date: dateIssued, EquipmentType: "General Maintenance",
-                Issue: descriptionStrip.substring(0, 150) + (descriptionStrip.length > 150 ? '...' : ''),
-                DARN: "", Quote: quoteNumber || "", Job: jobId, Responsibility: "", Comment: "Imported from Description",
-                Status: jobData.Stage || "pending"
-            });
-        }
-        
-        res.json(formattedData);
+            OutstandingWorks: desc ? [{
+                Date: dateIssued, EquipmentType: "Maintenance", Issue: descriptionStrip.substring(0, 150),
+                Quote: quoteNumber, Job: jobId, Status: jobData.Stage || "pending"
+            }] : []
+        });
     } catch (err) {
-        const errorMsg = err.response?.data?.errors?.[0]?.message || err.response?.data?.message || err.message;
-        console.error(`[ERROR] Job Fetch Failed: ${errorMsg}`);
-        res.status(500).json({ error: `REAL DATA ERROR: ${errorMsg}` });
+        const errorMsg = err.response?.data?.errors?.[0]?.message || err.message;
+        const failedUrl = err.config?.url || "Unknown URL";
+        console.error(`[ERROR] Fetch failed for ${failedUrl}: ${errorMsg}`);
+        res.status(500).json({ error: `SIMPRO API ERROR [${failedUrl}]: ${errorMsg}` });
     }
 });
 
 app.get('/api/schedules/today', async (req, res) => {
     try {
         const today = new Date().toISOString().split('T')[0];
+        const jobsRes = await getSimpro('/api/v1.0/companies/1/jobs/?pageSize=50&columns=ID,Name,Customer');
         
-        // Since UAT has no schedules, we will fetch the 50 most recent jobs instead
-        // This ensures the dropdown actually contains real data for the user to select
-        const jobsRes = await simproClient.get('/api/v1.0/companies/1/jobs/?pageSize=50&columns=ID,Name,Customer');
-        
-        let schedules = [];
-        if (jobsRes.data && jobsRes.data.length > 0) {
-            schedules = jobsRes.data.map(job => ({
-                jobId: job.ID,
-                client: job.Customer ? (job.Customer.CompanyName || `${job.Customer.GivenName || ''} ${job.Customer.FamilyName || ''}`.trim() || job.Name) : job.Name || "SimPRO Job",
-                site: "simPRO Site",
-                time: "Recent"
-            }));
-        } 
+        let schedules = jobsRes.data.map(job => ({
+            jobId: job.ID,
+            client: job.Customer ? (job.Customer.CompanyName || `${job.Customer.GivenName || ''} ${job.Customer.FamilyName || ''}`.trim() || job.Name) : job.Name || "SimPRO Job",
+            site: "simPRO Site", time: "Recent"
+        }));
         
         if (schedules.length === 0) {
-            schedules = [
-                { jobId: 423242, client: "OFFLINE: Jonny Macleod", site: "OFFLINE Site", time: "Recent" }
-            ];
+            schedules = [{ jobId: 423242, client: "Offline Demo: Jonny Macleod Village", site: "Offline Site", time: "09:00 AM" }];
         }
         res.json({ date: today, schedules });
     } catch (err) {
-        console.error("Error fetching jobs for dropdown:", err.message);
-        // Robust fallback to demo data
+        const errorMsg = err.response?.data?.errors?.[0]?.message || err.message;
+        const failedUrl = err.config?.url || "Unknown URL";
+        console.error(`[ERROR] Fetch failed for ${failedUrl}: ${errorMsg}`);
         res.json({ date: "Offline", schedules: [
-            { jobId: 423242, client: "OFFLINE: Jonny Macleod", site: "OFFLINE Site", time: "Recent" }
+            { jobId: 423242, client: "Offline Demo: Jonny Macleod Village", site: "Offline Site", time: "09:00 AM" }
         ]});
     }
 });
