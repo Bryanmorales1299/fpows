@@ -16,8 +16,15 @@ const PORT = process.env.PORT || 3000;
 app.use(express.static(__dirname));
 
 // SimPRO credentials
-const SIMPRO_BASE_URL = process.env.SIMPRO_BASE_URL;
-const SIMPRO_ACCESS_TOKEN = process.env.SIMPRO_ACCESS_TOKEN;
+const SIMPRO_BASE_URL = (process.env.SIMPRO_BASE_URL || "").trim().replace(/^"|"$/g, '');
+const SIMPRO_ACCESS_TOKEN = (process.env.SIMPRO_ACCESS_TOKEN || "").trim().replace(/^"|"$/g, '');
+
+console.log(`[INIT] SimPRO Base URL: ${SIMPRO_BASE_URL}`);
+console.log(`[INIT] SimPRO Token (first 5): ${SIMPRO_ACCESS_TOKEN.substring(0, 5)}...`);
+
+if (!SIMPRO_BASE_URL) {
+    console.error("[CRITICAL] SIMPRO_BASE_URL is missing!");
+}
 
 const simproClient = axios.create({
     baseURL: SIMPRO_BASE_URL,
