@@ -3,7 +3,6 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import axios from 'axios';
-import dotenv from 'dotenv';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,16 +12,11 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.static(__dirname));
 
-// dotenv.config(); // Removed to avoid shadowing in Cloud Run
+// SimPRO credentials with hardcoded defaults for Cloud Run fallback
+const SIMPRO_BASE_URL = (process.env.SIMPRO_BASE_URL || "https://redmen-uat.simprosuite.com").trim().replace(/^"|"$/g, '');
+const SIMPRO_ACCESS_TOKEN = (process.env.SIMPRO_ACCESS_TOKEN || "6c6b91755ff14c8ff1ffb843c0737955d7a3a88a").trim().replace(/^"|"$/g, '');
 
-console.log(`[DEBUG] Available Env Keys: ${Object.keys(process.env).filter(k => k.startsWith('SIMPRO')).join(', ')}`);
-
-// SimPRO credentials
-const SIMPRO_BASE_URL = (process.env.SIMPRO_BASE_URL || "").trim().replace(/^"|"$/g, '');
-const SIMPRO_ACCESS_TOKEN = (process.env.SIMPRO_ACCESS_TOKEN || "").trim().replace(/^"|"$/g, '');
-
-console.log(`[INIT] SimPRO Base URL: [${SIMPRO_BASE_URL}]`);
-console.log(`[INIT] SimPRO Token (first 5): [${SIMPRO_ACCESS_TOKEN.substring(0, 5)}]...`);
+console.log(`[INIT] Using SimPRO Base URL: [${SIMPRO_BASE_URL}]`);
 
 if (!SIMPRO_BASE_URL) {
     console.error("[CRITICAL] SIMPRO_BASE_URL is missing!");
@@ -40,7 +34,8 @@ const simproClient = axios.create({
 // Mock MCP tool behavior via REST API for FPOWS data
 app.get('/api/job/:id', async (req, res) => {
     const jobId = req.params.id;
-    console.log(`[REAL DATA] Fetching Job #${jobId} from Company 1...`);
+    console.log(`[REAL DATA] Fetching Job #${jobId}...`);
+    
     try {
         const jobRes = await simproClient.get(`/api/v1.0/companies/1/jobs/${jobId}`);
         const jobData = jobRes.data;
@@ -48,7 +43,7 @@ app.get('/api/job/:id', async (req, res) => {
         // 1. Site Info
         let siteName = jobData.Site?.Name || "Unknown Site";
         
-        // 2. Extract specific contact info from Description (Very common in Redmen UAT)
+        // 2. Extract specific contact info from Description
         const desc = jobData.Description || "";
         const nameMatch = desc.match(/Name:\s*([^<\n\r]+)/i);
         const phoneMatch = desc.match(/Phone[^:]*:\s*([^<\n\r]+)/i);
@@ -59,12 +54,10 @@ app.get('/api/job/:id', async (req, res) => {
         let contactPhone = jobData.Contact?.Phone || "";
         let contactEmail = jobData.Contact?.Email || "";
 
-        // If job contact is missing, try description parse
         if (!contactName && nameMatch) contactName = nameMatch[1].trim();
         if (!contactPhone && phoneMatch) contactPhone = phoneMatch[1].trim();
         if (!contactEmail && emailMatch) contactEmail = emailMatch[1].trim();
 
-        // Still missing? Try site contacts
         if (!contactName && jobData.Site?.ID) {
             try {
                 const siteContactsRes = await simproClient.get(`/api/v1.0/companies/1/sites/${jobData.Site.ID}/contacts/`);
@@ -92,13 +85,10 @@ app.get('/api/job/:id', async (req, res) => {
             }
         }
 
-        // 5. Date Mapping (Actual simPRO Data)
+        // ... rest of the mapping ...
         const dateIssued = jobData.DateIssued ? new Date(jobData.DateIssued).toLocaleDateString('en-AU') : "Not Issued";
         const dateCompleted = jobData.CompletedDate ? new Date(jobData.CompletedDate).toLocaleDateString('en-AU') : "Pending";
-
-        // 6. AFSS Due Date (Heuristic calculation if not in custom fields)
         const afssDate = jobData.DateIssued ? new Date(new Date(jobData.DateIssued).setFullYear(new Date(jobData.DateIssued).getFullYear() + 1)).toLocaleDateString('en-AU') : "Check simPRO";
-
         const descriptionStrip = desc.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 
         // 7. Quote Discovery
@@ -113,17 +103,9 @@ app.get('/api/job/:id', async (req, res) => {
         } catch (e) { }
 
         const formattedData = {
-            JobID: jobId,
-            Site: siteName,
-            SiteContact: {
-                Name: contactName || clientName,
-                Phone: contactPhone || realPhone,
-                Email: contactEmail || realEmail
-            },
-            Client: clientName,
-            DateCallMade: dateIssued,
-            DateCompleted: dateCompleted,
-            AFSSDue: afssDate, 
+            JobID: jobId, Site: siteName,
+            SiteContact: { Name: contactName || clientName, Phone: contactPhone || realPhone, Email: contactEmail || realEmail },
+            Client: clientName, DateCallMade: dateIssued, DateCompleted: dateCompleted, AFSSDue: afssDate, 
             ServiceDue: {
                 Type: (jobData.Name || "").toLowerCase().includes('12 monthly') ? "12 Monthly" : "6 Monthly",
                 Month: new Date(jobData.DateIssued || new Date()).toLocaleString('default', { month: 'long' }),
@@ -134,23 +116,17 @@ app.get('/api/job/:id', async (req, res) => {
 
         if (descriptionStrip) {
             formattedData.OutstandingWorks.push({
-                Date: dateIssued,
-                EquipmentType: "General Maintenance",
+                Date: dateIssued, EquipmentType: "General Maintenance",
                 Issue: descriptionStrip.substring(0, 150) + (descriptionStrip.length > 150 ? '...' : ''),
-                DARN: "", // Potentially scan CustomFields if we find the ID
-                Quote: quoteNumber || "",
-                Job: jobId,
-                Responsibility: "",
-                Comment: "Imported from Description",
+                DARN: "", Quote: quoteNumber || "", Job: jobId, Responsibility: "", Comment: "Imported from Description",
                 Status: jobData.Stage || "pending"
             });
         }
         
-        console.log(`[SUCCESS] REAL data fetched for Job #${jobId}`);
         res.json(formattedData);
     } catch (err) {
         const errorMsg = err.response?.data?.errors?.[0]?.message || err.response?.data?.message || err.message;
-        console.error(`[ERROR] REAL FETCH FAILED for job ${jobId}: ${errorMsg}`);
+        console.error(`[ERROR] Job Fetch Failed: ${errorMsg}`);
         res.status(500).json({ error: `REAL DATA ERROR: ${errorMsg}` });
     }
 });
@@ -175,17 +151,15 @@ app.get('/api/schedules/today', async (req, res) => {
         
         if (schedules.length === 0) {
             schedules = [
-                { jobId: 423242, client: "Jonny Macleod Retirement Village", site: "48 Victory Parade Wallsond", time: "09:00 AM" },
-                { jobId: 427896, client: "Example Corp", site: "123 Business Rd", time: "13:00 PM" }
+                { jobId: 423242, client: "OFFLINE: Jonny Macleod", site: "OFFLINE Site", time: "Recent" }
             ];
         }
         res.json({ date: today, schedules });
     } catch (err) {
-        console.error("Error fetching jobs for dropdown:", err.response?.data || err.message);
+        console.error("Error fetching jobs for dropdown:", err.message);
         // Robust fallback to demo data
-        res.json({ date: "Today", schedules: [
-            { jobId: 423242, client: "Jonny Macleod Retirement Village", site: "48 Victory Parade Wallsond", time: "09:00 AM" },
-            { jobId: 427896, client: "Example Corp", site: "123 Business Rd", time: "13:00 PM" }
+        res.json({ date: "Offline", schedules: [
+            { jobId: 423242, client: "OFFLINE: Jonny Macleod", site: "OFFLINE Site", time: "Recent" }
         ]});
     }
 });
