@@ -881,6 +881,9 @@
             const q = this.normalizeInput(input);
             const delay = ms => new Promise(r => setTimeout(r, ms));
 
+            // Universal "Thinking" time for every chat interaction
+            await delay(1100 + Math.random() * 700);
+
             // 1. Check for Job ID (Highest Priority)
             const jobId = this.extractJobId(rawQ);
             if (jobId) {
@@ -891,9 +894,6 @@
                 this.context.lastIntent = 'fetch';
                 return;
             }
-
-            // Short typing delay for non-fetch responses
-            await delay(800 + Math.random() * 500);
 
             let res = "";
             let followUp = "";
