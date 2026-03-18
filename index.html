@@ -938,7 +938,16 @@
                 }
             }
 
-            // 3. Affirmations (Confirming the data is correct)
+            // 3. Negations (Refusals take priority over affirmations)
+            else if (q.match(/\b(no|nope|nah|not yet|not ready|will not|do not|don't|stop|wait|hold on|cancel|don't want|dont want)\b/) || q.match(/not (correct|good|right|ready|accurate|wanting|now)/)) {
+                if (this.context.lastIntent === 'confirm' || this.context.lastIntent === 'verify') {
+                    speak("Understood — I'll hold the line. No printing until you give the word. What needs a closer look?", "You can ask me about specific fields like 'What is the phone number?'.", "negate");
+                } else {
+                    speak("Copy that. Standing by for your next command.", "What's the plan?", "negate");
+                }
+            }
+
+            // 4. Affirmations (Confirming the data is correct)
             else if (q.match(/\b(yes|yeah|yep|yup|sure|absolutely|confirmed|correct|right|do it|go for it|ready)\b/) || 
                 q.match(/looks (good|correct|accurate|right)|details (are|seem) (good|correct|accurate|right)|everything (is|seems) (good|correct|accurate|right)|i think.*(correct|good|accurate|right)|it is (correct|good|accurate|right)|spot on|perfecto|assessed/)
             ) {
@@ -947,15 +956,6 @@
                           "Whenever you're ready, say <strong>print</strong> to generate the sheet, or let me know if you want to double-check a specific detail first!", "confirm");
                 } else {
                     speak("Confirmed! I like the confidence. What should we tackle next?", "You can type a job ID or ask for help.", "affirm");
-                }
-            }
-            
-            // 4. Negations (No/Not Yet)
-            else if (q.match(/\b(no|nope|nah|not yet|not ready|will not|do not|shortcut|stop|wait|hold on|cancel)\b/) || q.match(/not (correct|good|right|ready|accurate)/)) {
-                if (this.context.lastIntent === 'confirm' || this.context.lastIntent === 'verify') {
-                    speak("Understood — I'll hold the line. No printing until you give the word. What needs a closer look?", "You can ask me about specific fields like 'What is the phone number?'.", "negate");
-                } else {
-                    speak("Copy that. Standing by for your next command.", "What's the plan?", "negate");
                 }
             }
             
