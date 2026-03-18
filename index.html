@@ -280,6 +280,61 @@
         .tag-alert { background: #fff1f2; color: #e63946; }
         .tag-info { background: #f0f9ff; color: #0ea5e9; }
         .tag-success { background: #f0fdf4; color: #22c55e; }
+
+        /* --- Chatbot Widget Styles --- */
+        #chat-trigger {
+            position: fixed; bottom: 24px; right: 24px;
+            width: 60px; height: 60px; border-radius: 50%;
+            background: linear-gradient(135deg, #e63946, #b22222);
+            color: white; display: flex; align-items: center; justify-content: center;
+            font-size: 1.8rem; cursor: pointer; z-index: 1000;
+            box-shadow: 0 4px 20px rgba(230, 57, 70, 0.4);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        #chat-trigger:hover { transform: scale(1.1) rotate(5deg); box-shadow: 0 6px 25px rgba(230, 57, 70, 0.5); }
+        
+        #chat-window {
+            position: fixed; bottom: 100px; right: 24px;
+            width: 380px; height: 500px; background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(16px); border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 20px; display: none; flex-direction: column; overflow: hidden;
+            box-shadow: 0 15px 45px rgba(0,0,0,0.15); z-index: 1000;
+            transform-origin: bottom right; animation: chatOpen 0.3s ease;
+        }
+        @keyframes chatOpen { from { opacity: 0; transform: scale(0.9) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        
+        .chat-header {
+            padding: 20px; background: var(--dark); color: white;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .chat-header h3 { margin: 0; font-size: 1rem; display: flex; align-items: center; gap: 8px; }
+        .chat-close { cursor: pointer; opacity: 0.7; transition: opacity 0.2s; font-size: 1.2rem; }
+        .chat-close:hover { opacity: 1; }
+
+        .chat-messages {
+            flex: 1; padding: 20px; overflow-y: auto;
+            display: flex; flex-direction: column; gap: 12px;
+            scroll-behavior: smooth; background: #fafafa;
+        }
+        .msg { max-width: 85%; padding: 10px 14px; border-radius: 14px; font-size: 0.9rem; line-height: 1.4; animation: msgFade 0.2s ease; }
+        @keyframes msgFade { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .msg-bot { background: white; border: 1px solid #eee; align-self: flex-start; border-bottom-left-radius: 2px; color: #333; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .msg-user { background: var(--accent); color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+        
+        .chat-input-area { padding: 16px; border-top: 1px solid #eee; display: flex; gap: 10px; background: white; }
+        .chat-input {
+            flex: 1; border: 1px solid #e0e0e0; padding: 10px 14px; border-radius: 10px;
+            outline: none; font-family: inherit; font-size: 0.9rem; transition: border-color 0.2s;
+        }
+        .chat-input:focus { border-color: var(--accent); }
+        .chat-send { background: var(--accent); color: white; border: none; width: 40px; height: 40px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+        .chat-send:disabled { opacity: 0.5; cursor: not-allowed; }
+        .typing-indicator { display: flex; align-items: center; gap: 4px; padding: 10px 14px; background: white; border: 1px solid #eee; border-radius: 14px; border-bottom-left-radius: 2px; align-self: flex-start; width: fit-content; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .typing-indicator span { width: 8px; height: 8px; background: #bbb; border-radius: 50%; display: inline-block; animation: bounce 1.2s infinite; }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0.7); opacity: 0.4; } 40% { transform: scale(1); opacity: 1; } }
     </style>
 </head>
 <body>
@@ -463,7 +518,7 @@
                 <div class="agent-avatar">🤖</div>
                 <div class="agent-info">
                     <h3>FPOWS Agent</h3>
-                    <p><span class="status-dot"></span> Analyzing simPRO UAT...</p>
+                    <p><span class="status-dot"></span> simPRO Online</p>
                 </div>
             </div>
 
@@ -474,12 +529,30 @@
                 </div>
             </div>
 
-            <div class="insight-card" style="margin-top: auto; background: #333; color: white; border: none;">
-                <p style="font-size: 0.7rem; opacity: 0.8;">Agent version 1.2 · Connected to Company 1</p>
+            <div class="insight-card" style="margin-top: auto; background: #333; border: none;">
+                <p style="font-size: 0.7rem; opacity: 0.8; color: white;">Agent version 1.2 · Connected to Company 1</p>
             </div>
         </aside>
     </div><!-- .page-layout -->
 </div><!-- .page-wrapper -->
+
+<!-- Chatbot Widget UI -->
+<div id="chat-trigger">🤖</div>
+<div id="chat-window">
+    <div class="chat-header">
+        <h3>🤖 FPOWS Assistant</h3>
+        <span class="chat-close" id="chat-close">&times;</span>
+    </div>
+    <div class="chat-messages" id="chat-messages">
+        <div class="msg msg-bot">
+            Welcome! I'm your FPOWS controller. Ask me about your jobs or status updates. How can I assist you right now?
+        </div>
+    </div>
+    <div class="chat-input-area">
+        <input type="text" class="chat-input" id="chat-input" placeholder="Type a command...">
+        <button class="chat-send" id="chat-send">➤</button>
+    </div>
+</div>
 
 <script>
     const $ = id => document.getElementById(id);
@@ -549,6 +622,9 @@
     }
 
     function updateAgent(data) {
+        const statusText = document.querySelector('.agent-info p');
+        if (statusText) statusText.innerHTML = '<span class="status-dot"></span> Job Analysis Active';
+
         const insights = $('agent-insights');
         insights.innerHTML = '';
 
@@ -679,6 +755,284 @@
     $('btn-fetch').addEventListener('click', fetchJob);
     $('job-id-input').addEventListener('keydown', e => { if (e.key === 'Enter') fetchJob(); });
     $('btn-print').addEventListener('click', () => window.print());
+
+    /* --- Chatbot Logic --- */
+    class FPOWSChatbot {
+        constructor() {
+            this.trigger = $('chat-trigger');
+            this.window = $('chat-window');
+            this.close = $('chat-close');
+            this.input = $('chat-input');
+            this.send = $('chat-send');
+            this.messages = $('chat-messages');
+            this.context = { lastIntent: null, lastJobId: null };
+            this.init();
+        }
+
+        init() {
+            this.trigger.onclick = () => this.toggle(true);
+            this.close.onclick = () => this.toggle(false);
+            this.send.onclick = () => this.handleUserMessage();
+            this.input.onkeydown = (e) => { if (e.key === 'Enter') this.handleUserMessage(); };
+        }
+
+        toggle(show) {
+            this.window.style.display = show ? 'flex' : 'none';
+            if (show) this.input.focus();
+        }
+
+        async handleUserMessage() {
+            const text = this.input.value.trim();
+            if (!text) return;
+
+            this.addMessage(text, 'user');
+            this.input.value = '';
+            this.input.disabled = true;
+            this.send.disabled = true;
+
+            const typingBubble = this.showTyping();
+            await this.processResponse(text, typingBubble);
+
+            this.input.disabled = false;
+            this.send.disabled = false;
+            this.input.focus();
+        }
+
+        showTyping() {
+            const div = document.createElement('div');
+            div.className = 'typing-indicator';
+            div.innerHTML = '<span></span><span></span><span></span>';
+            this.messages.appendChild(div);
+            this.messages.scrollTop = this.messages.scrollHeight;
+            return div;
+        }
+
+        addMessage(text, side) {
+            const div = document.createElement('div');
+            div.className = `msg msg-${side}`;
+            div.innerHTML = text;
+            this.messages.appendChild(div);
+            this.messages.scrollTop = this.messages.scrollHeight;
+        }
+
+        extractJobId(text) {
+            // Match patterns like "420433", "job 420433", "job #420433", "#420433"
+            const match = text.match(/(?:job\s*#?\s*|#)(\d{4,})/i) || text.match(/^(\d{4,})$/);
+            return match ? match[1] : null;
+        }
+
+        async fetchJobForChat(jobId) {
+            try {
+                const res = await fetch(`/api/job/${jobId}`);
+                const data = await res.json();
+                if (!res.ok || data.error) throw new Error(data.error || `HTTP ${res.status}`);
+
+                // Also load it into the main form
+                renderForm(data);
+                $('job-id-input').value = jobId;
+                $('status-pill').className = 'status-pill pill-done';
+                $('status-pill').textContent = `✅ Job #${jobId} loaded`;
+                $('btn-fetch').textContent = '🔄 Reload';
+
+                // Build a clean, concise summary for the chat
+                const contact = data.SiteContact || {};
+                const works = data.OutstandingWorks || [];
+                let summary = `<strong>✅ Job #${jobId} — Loaded!</strong><br><br>`;
+                summary += `<strong>Client:</strong> ${data.Client || '—'}<br>`;
+                summary += `<strong>Site:</strong> ${data.Site || '—'}<br>`;
+                summary += `<strong>Contact:</strong> ${contact.Name || '—'}<br>`;
+                summary += `<strong>Phone:</strong> ${contact.Phone || '—'}<br>`;
+                summary += `<strong>Email:</strong> ${contact.Email || '—'}<br>`;
+                summary += `<strong>AFSS Due:</strong> ${data.AFSSDue || '—'}<br>`;
+                summary += `<strong>Service:</strong> ${data.ServiceDue?.Type || '—'} (${data.ServiceDue?.Month || ''} ${data.ServiceDue?.Year || ''})<br>`;
+                summary += `<strong>Outstanding Works:</strong> ${works.length} item(s)`;
+                if (works.length > 0) {
+                    works.forEach((w, i) => {
+                        summary += `<br>📋 <strong>Work ${i+1}:</strong> ${w.EquipmentType || 'N/A'} — Job #${w.Job || '—'} | Status: ${w.Status || 'Pending'}`;
+                    });
+                }
+                summary += `<br><br>📄 Full details are on the form. Want me to verify the data, or are we ready to print?`;
+                return summary;
+            } catch (err) {
+                return `❌ Failed to fetch Job #${jobId}: ${err.message}. Double-check the ID and try again — I don't tolerate typos!`;
+            }
+        }
+
+        normalizeInput(text) {
+            return text.toLowerCase()
+                .replace(/[.,?!]/g, '')
+                .replace(/\bi'm\b/g, 'i am')
+                .replace(/\bcan't\b/g, 'cannot')
+                .replace(/\bdon't\b/g, 'do not')
+                .replace(/\bwont\b/g, 'will not')
+                .replace(/\bwon't\b/g, 'will not')
+                .trim();
+        }
+
+        getFieldValue(id) {
+            const el = $(id);
+            if (!el) return null;
+            const val = el.textContent.trim();
+            return (val === '—' || val === '') ? null : val;
+        }
+
+        async processResponse(input, typingBubble) {
+            const rawQ = input;
+            const q = this.normalizeInput(input);
+            const delay = ms => new Promise(r => setTimeout(r, ms));
+
+            // 1. Check for Job ID (Highest Priority)
+            const jobId = this.extractJobId(rawQ);
+            if (jobId) {
+                this.context.lastJobId = jobId;
+                const summary = await this.fetchJobForChat(jobId);
+                typingBubble.remove();
+                this.addMessage(summary, 'bot');
+                this.context.lastIntent = 'fetch';
+                return;
+            }
+
+            // Short typing delay for non-fetch responses
+            await delay(800 + Math.random() * 500);
+
+            let res = "";
+            let followUp = "";
+            let intentMatched = null;
+
+            // HELPER: Respond and exit
+            const speak = (content, next, intent) => {
+                res = content;
+                followUp = next;
+                intentMatched = intent;
+            };
+
+            // 2. Context-Aware Affirmations (Yes/No/Correct)
+            if (q.match(/\b(yes|yeah|yep|yup|sure|absolutely|confirmed|correct|right|do it|go for it|ready)\b/) || 
+                q.match(/looks (good|correct|accurate|right)|details (are|seem) (good|correct|accurate|right)|everything (is|seems) (good|correct|accurate|right)|i think.*(correct|good|accurate|right)|it is (correct|good|accurate|right)|spot on|perfecto|assessed/)
+            ) {
+                if (this.context.lastIntent === 'verify' || this.context.lastIntent === 'fetch') {
+                    speak("Outstanding! I've logged your assessment — we're officially cleared for takeoff. The data is verified and the form is primed.", 
+                          "Say <strong>print</strong> whenever you're ready to generate the sheet, or let me know if you want to double-check anything else first!", "confirm");
+                } else {
+                    speak("Confirmed! I like the confidence. What should we tackle next?", "You can type a job ID or ask for help.", "affirm");
+                }
+            }
+            
+            // 2b. Context-Aware Negations (No/Not Yet)
+            else if (q.match(/\b(no|nope|nah|not yet|not ready|will not|do not|shortcut|stop|wait|hold on|cancel)\b/) || q.match(/not (correct|good|right|ready|accurate)/)) {
+                if (this.context.lastIntent === 'confirm' || this.context.lastIntent === 'verify') {
+                    speak("Understood — I'll hold the line. No printing until you give the word. What needs a closer look?", "You can ask me about specific fields like 'What is the phone number?'.", "negate");
+                } else {
+                    speak("Copy that. Standing by for your next command.", "What's the plan?", "negate");
+                }
+            }
+            
+            // 3. Specific Data Queries (Site, Contact, Phone, etc.)
+            else if (q.match(/site|address|location|where/)) {
+                const site = this.getFieldValue('f-site');
+                if (site) speak(`The site is <strong>${site}</strong>.`, "Need the site contact details as well?", "query_site");
+                else speak("No site is loaded yet.", "Type a job number and I'll find it for you.", "error");
+            }
+            else if (q.match(/contact|who is the|name/)) {
+                const contact = this.getFieldValue('f-contact');
+                if (contact) speak(`The primary contact is <strong>${contact}</strong>.`, "Should I give you their phone number or email?", "query_contact");
+                else speak("I don't have a contact for this job yet.", "Load a job first!", "error");
+            }
+            else if (q.match(/phone|call|number/)) {
+                const phone = this.getFieldValue('f-phone');
+                if (phone) speak(`The contact number is <strong>${phone}</strong>.`, "Want me to verify the email address too?", "query_phone");
+                else speak("No phone number found for the current job.", "Verify it in simPRO or try another job ID.", "error");
+            }
+            else if (q.match(/email|mail/)) {
+                const email = this.getFieldValue('f-email');
+                if (email) speak(`The email address is <strong>${email}</strong>.`, "Everything looks correct for this contact?", "query_email");
+                else speak("No email address found for this contact.", "You might need to add it in simPRO manually.", "error");
+            }
+            else if (q.match(/afss|due|expiry|date/)) {
+                const afss = this.getFieldValue('f-afss');
+                if (afss) speak(`The AFSS due date is <strong>${afss}</strong>.`, "We still have time, or is it urgent?", "query_afss");
+                else speak("I don't see an AFSS date loaded.", "Check the job ID and try again.", "error");
+            }
+
+            // 4. General Intents
+            else if (q.includes("how are you")) {
+                speak("Functioning at peak efficiency — sharper than a fire axe and twice as ready. My circuits are buzzing with job data and I wouldn't have it any other way.", 
+                      "You though? How are <em>you</em> doing? Any jobs need auditing?", "greeting");
+            } 
+            else if (/\bhi\b|\bhello\b|\bgday\b/.test(q)) {
+                speak("Salutations! The FPOWS Intelligence Agent is online, caffeinated, and ready to command your data.", 
+                      "What are we tackling today? Just type a job number.", "greeting");
+            } 
+            else if (q.match(/thank|thanks|cheers|appreciate|ty\b/)) {
+                const job = this.getFieldValue('f-jobid');
+                speak(job ? `You're very welcome! Job #${job} is looking sharp under my watch.` : "You're very welcome! I live to be helpful. Bring me more jobs!", 
+                      "What's next on the agenda?", "gratitude");
+            } 
+            else if (q.match(/\bbye\b|goodbye|see you|cya|done|finished|all done/)) {
+                speak("Roger that! Go forth and conquer. I'll be here, quietly judging incomplete AFSS data in simPRO until you return.", "Stay safe out there! 🔥", "exit");
+            }
+            else if (q.match(/verify|audit|check|data correct|is it right|accurate|right\?|confirm\?/)) {
+                const currentJob = this.getFieldValue('f-jobid');
+                if (currentJob) {
+                    const client = this.getFieldValue('f-client');
+                    const site = this.getFieldValue('f-site');
+                    const contact = this.getFieldValue('f-contact');
+                    const phone = this.getFieldValue('f-phone');
+                    const email = this.getFieldValue('f-email');
+                    const afss = this.getFieldValue('f-afss');
+                    const service6 = this.getFieldValue('f-6mo');
+                    const sMonth = this.getFieldValue('f-6mo-month');
+                    const sYear = this.getFieldValue('f-6mo-year');
+
+                    res = `Alright, let's audit Job #${currentJob}:<br><br>`;
+                    res += `✅ <strong>Client:</strong> ${client || 'Unknown'}<br>`;
+                    res += `✅ <strong>Site:</strong> ${site || 'Unknown'}<br>`;
+                    res += `${contact ? '✅' : '⚠️'} <strong>Contact:</strong> ${contact || '<em>Missing!</em>'}<br>`;
+                    res += `${phone ? '✅' : '⚠️'} <strong>Phone:</strong> ${phone || '<em>Missing</em>'}<br>`;
+                    res += `${email ? '✅' : '⚠️'} <strong>Email:</strong> ${email || '<em>Missing</em>'}<br>`;
+                    res += `✅ <strong>AFSS Due:</strong> ${afss || 'N/A'}<br>`;
+                    res += `✅ <strong>Service:</strong> ${service6} — ${sMonth} ${sYear}`;
+                    followUp = "<br><br>That's the report. If all ✅ — we're ready to print. Any warnings need fixing in simPRO first!";
+                    intentMatched = 'verify';
+                } else {
+                    speak("I can't verify data that doesn't exist — load a job first!", "Type a job number to get started.", "error");
+                }
+            } 
+            else if (q.match(/current|loaded|this job|active|walk|detail|about|tell me/)) {
+                const currentJob = this.getFieldValue('f-jobid');
+                if (currentJob) {
+                    speak(`Locked and loaded! Job #${currentJob}: <strong>${this.getFieldValue('f-client')}</strong> at <strong>${this.getFieldValue('f-site')}</strong>.`, 
+                          "Want me to run a full verification, or are we heading to print?", "walkthrough");
+                } else {
+                    speak("There's nothing loaded yet — the form is as blank as a Monday morning.", "Give me a job number and I'll fix that.", "error");
+                }
+            } 
+            else if (q.includes("print") || q.includes("save")) {
+                speak("Let's get this done! 1️⃣ Check data. 2️⃣ Click **Print** (top right). 3️⃣ Save as PDF or print.", "Are all details verified?", "print");
+            } 
+            else if (q.includes("who are you")) {
+                speak("I am the FPOWS Intelligence Agent — built to eliminate errors and command your workflows. Legend status? Absolutely.", 
+                      "What can I do for you today?", "greeting");
+            } 
+            else if (q.includes("help") || q.includes("what can you do")) {
+                speak("I'm more capable than I look. I can fetch jobs (type the ID), walk you through data, verify accuracy, and guide you to print.", 
+                      "What's the mission?", "help");
+            } 
+            else {
+                const openers = ["Hmm, that's above my pay grade! 🤔", "I'm sharp, but not a mind-reader — yet!", "That's not in my manual, chief."];
+                speak(openers[Math.floor(Math.random() * openers.length)] + " Try a **job number** or ask me to **verify data**.", "Or type **help**.", "unknown");
+            }
+
+            this.context.lastIntent = intentMatched;
+            typingBubble.remove();
+            this.addMessage(`${res} ${followUp}`, 'bot');
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        initSchedules();
+        new FPOWSChatbot();
+    });
 </script>
 </body>
 </html>

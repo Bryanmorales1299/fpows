@@ -119,7 +119,7 @@ app.get('/api/job/:id', async (req, res) => {
         if (descriptionStrip) {
             formattedData.OutstandingWorks.push({
                 Date: dateIssued, EquipmentType: "General Maintenance",
-                Issue: descriptionStrip.substring(0, 150) + (descriptionStrip.length > 150 ? '...' : ''),
+                Issue: descriptionStrip,
                 DARN: "", Quote: quoteNumber || "", Job: jobId, Responsibility: "", Comment: "Imported from Description",
                 Status: jobData.Stage || "pending"
             });
