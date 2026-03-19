@@ -72,7 +72,7 @@
         .pill-error    { background: #2e1010; color: #cc5252; border: 1px solid #c0392b; }
 
         /* ── Page wrapper ── */
-        .page-wrapper { max-width: 1240px; margin: 30px auto; padding: 0 24px 60px; }
+        .page-wrapper { max-width: 1600px; margin: 30px auto; padding: 0 24px 60px; }
 
         /* ── FPOWS Form UI Alignment ── */
         #fpows-form {
@@ -106,9 +106,10 @@
         /* Table Alignment */
         .works-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         .works-table th {
-            background: #2c2c2c; color: #fff; padding: 10px 12px;
-            font-size: 0.7rem; text-transform: uppercase; font-weight: 700;
+            background: #2c2c2c; color: #fff; padding: 10px 8px;
+            font-size: 0.65rem; text-transform: uppercase; font-weight: 700;
             text-align: left; border-right: 1px solid #444;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
         .works-table td {
             padding: 12px; font-size: 0.8rem; color: #111;
@@ -176,16 +177,17 @@
 
             .works-table { width: 100% !important; table-layout: fixed !important; }
             
-            /* Explicit column widths for Outstanding Works (9 columns) */
+            /* Explicit column widths for Outstanding Works (10 columns) */
             #works-table th:nth-child(1), #works-table td:nth-child(1) { width: 45px !important; }
             #works-table th:nth-child(2), #works-table td:nth-child(2) { width: 85px !important; }
             #works-table th:nth-child(3), #works-table td:nth-child(3) { width: auto !important; }
-            #works-table th:nth-child(4), #works-table td:nth-child(4) { width: 55px !important; }
-            #works-table th:nth-child(5), #works-table td:nth-child(5) { width: 55px !important; }
-            #works-table th:nth-child(6), #works-table td:nth-child(6) { width: 55px !important; }
-            #works-table th:nth-child(7), #works-table td:nth-child(7) { width: 80px !important; }
-            #works-table th:nth-child(8), #works-table td:nth-child(8) { width: 120px !important; }
-            #works-table th:nth-child(9), #works-table td:nth-child(9) { width: 75px !important; }
+            #works-table th:nth-child(4), #works-table td:nth-child(4) { width: 50px !important; }
+            #works-table th:nth-child(5), #works-table td:nth-child(5) { width: 50px !important; }
+            #works-table th:nth-child(6), #works-table td:nth-child(6) { width: 50px !important; }
+            #works-table th:nth-child(7), #works-table td:nth-child(7) { width: 50px !important; }
+            #works-table th:nth-child(8), #works-table td:nth-child(8) { width: 80px !important; }
+            #works-table th:nth-child(9), #works-table td:nth-child(9) { width: 120px !important; }
+            #works-table th:nth-child(10), #works-table td:nth-child(10) { width: 75px !important; }
 
             /* Explicit column widths for Recommendations (6 columns) */
             #rec-table th:nth-child(1), #rec-table td:nth-child(1) { width: 80px !important; }
@@ -210,7 +212,7 @@
         .page-layout {
             display: flex;
             gap: 24px;
-            max-width: 1300px;
+            max-width: 1600px;
             margin: 0 auto;
             padding: 20px;
         }
@@ -462,24 +464,25 @@
         <table class="works-table" id="works-table">
             <thead>
                 <tr>
-                    <th style="width:7%">Date</th>
-                    <th style="width:10%">Equipment Type</th>
-                    <th style="width:18%">Issue</th>
-                    <th style="width:7%">DARN #</th>
-                    <th style="width:7%">Quote #</th>
-                    <th style="width:7%">Job #</th>
-                    <th style="width:13%">Responsibility</th>
-                    <th style="width:20%">Comment</th>
-                    <th style="width:11%" class="col-status">Status</th>
+                    <th style="width:6%">Date</th>
+                    <th style="width:9%">Equipment Type</th>
+                    <th style="width:30%">Issue</th>
+                    <th style="width:7%">Lead #</th>
+                    <th style="width:6%">DARN #</th>
+                    <th style="width:6%">Quote #</th>
+                    <th style="width:6%">Job #</th>
+                    <th style="width:11%">Responsibility</th>
+                    <th style="width:10%">Comment</th>
+                    <th style="width:9%" class="col-status">Status</th>
                 </tr>
             </thead>
             <tbody id="f-works-body">
-                <tr class="empty-row"><td colspan="9">&nbsp;</td></tr>
-                <tr class="empty-row"><td colspan="9">&nbsp;</td></tr>
-                <tr class="empty-row"><td colspan="9">&nbsp;</td></tr>
-                <tr class="empty-row"><td colspan="9">&nbsp;</td></tr>
-                <tr class="empty-row"><td colspan="9">&nbsp;</td></tr>
-                <tr class="empty-row"><td colspan="9">&nbsp;</td></tr>
+                <tr class="empty-row"><td colspan="10">&nbsp;</td></tr>
+                <tr class="empty-row"><td colspan="10">&nbsp;</td></tr>
+                <tr class="empty-row"><td colspan="10">&nbsp;</td></tr>
+                <tr class="empty-row"><td colspan="10">&nbsp;</td></tr>
+                <tr class="empty-row"><td colspan="10">&nbsp;</td></tr>
+                <tr class="empty-row"><td colspan="10">&nbsp;</td></tr>
             </tbody>
         </table>
 
@@ -597,6 +600,7 @@
                     <td style="font-size:0.7rem">${w.Date || ''}</td>
                     <td>${w.EquipmentType || ''}</td>
                     <td style="font-size:0.72rem; line-height:1.2">${w.Issue || ''}</td>
+                    <td>${w.Lead || ''}</td>
                     <td>${w.DARN || ''}</td>
                     <td>${w.Quote || ''}</td>
                     <td>${w.Job || ''}</td>
@@ -612,7 +616,7 @@
         for (let i = 0; i < fill; i++) {
             const tr = document.createElement('tr');
             tr.className = 'empty-row';
-            tr.innerHTML = '<td colspan="8">&nbsp;</td><td class="col-status">&nbsp;</td>';
+            tr.innerHTML = '<td colspan="9">&nbsp;</td><td class="col-status">&nbsp;</td>';
             tbody.appendChild(tr);
         }
 

@@ -120,7 +120,7 @@ app.get('/api/job/:id', async (req, res) => {
             formattedData.OutstandingWorks.push({
                 Date: dateIssued, EquipmentType: "General Maintenance",
                 Issue: descriptionStrip,
-                DARN: "", Quote: quoteNumber || "", Job: jobId, Responsibility: "", Comment: "Imported from Description",
+                Lead: "", DARN: "", Quote: quoteNumber || "", Job: jobId, Responsibility: "", Comment: "Imported from Description",
                 Status: jobData.Stage || "pending"
             });
         }
