@@ -72,7 +72,7 @@
         .pill-error    { background: #2e1010; color: #cc5252; border: 1px solid #c0392b; }
 
         /* ── Page wrapper ── */
-        .page-wrapper { max-width: 1240px; margin: 30px auto; padding: 0 24px 60px; }
+        .page-wrapper { max-width: 1600px; margin: 30px auto; padding: 0 24px 60px; }
 
         /* ── FPOWS Form UI Alignment ── */
         #fpows-form {
@@ -210,7 +210,7 @@
         .page-layout {
             display: flex;
             gap: 24px;
-            max-width: 1300px;
+            max-width: 1600px;
             margin: 0 auto;
             padding: 20px;
         }
@@ -464,13 +464,13 @@
                 <tr>
                     <th style="width:7%">Date</th>
                     <th style="width:10%">Equipment Type</th>
-                    <th style="width:18%">Issue</th>
-                    <th style="width:7%">DARN #</th>
-                    <th style="width:7%">Quote #</th>
-                    <th style="width:7%">Job #</th>
-                    <th style="width:13%">Responsibility</th>
-                    <th style="width:20%">Comment</th>
-                    <th style="width:11%" class="col-status">Status</th>
+                    <th style="width:28%">Issue</th>
+                    <th style="width:6%">DARN #</th>
+                    <th style="width:6%">Quote #</th>
+                    <th style="width:6%">Job #</th>
+                    <th style="width:6%">Lead #</th>
+                    <th style="width:21%">Comment</th>
+                    <th style="width:10%" class="col-status">Status</th>
                 </tr>
             </thead>
             <tbody id="f-works-body">
@@ -490,10 +490,10 @@
                 <tr>
                     <th style="width:12%">Date of Discussion</th>
                     <th style="width:12%">Equipment Type</th>
-                    <th style="width:24%">Issue</th>
-                    <th style="width:15%">Responsibility</th>
-                    <th style="width:24%">Comment</th>
-                    <th style="width:13%" class="col-status">Status</th>
+                    <th style="width:34%">Issue</th>
+                    <th style="width:12%">Responsibility</th>
+                    <th style="width:18%">Comment</th>
+                    <th style="width:12%" class="col-status">Status</th>
                 </tr>
             </thead>
             <tbody>
@@ -563,9 +563,11 @@
 
     function badgeHtml(status) {
         const s = (status || '').toLowerCase();
-        if (s === 'completed') return '<span class="status-badge s-completed">✔ Completed</span>';
-        if (s === 'pending')   return '<span class="status-badge s-pending">⏳ Pending</span>';
-        return '<span class="status-badge s-na">—</span>';
+        if (s.includes('complete')) return '<span class="status-badge s-completed">✔ Complete</span>';
+        if (s.includes('pending'))  return '<span class="status-badge s-pending">⏳ Pending</span>';
+        if (s.includes('progress')) return '<span class="status-badge s-pending">⚙ In Progress</span>';
+        if (s.includes('open'))     return '<span class="status-badge s-pending">↗ Open</span>';
+        return `<span class="status-badge s-na">${status || '—'}</span>`;
     }
 
     function renderForm(data) {
@@ -579,12 +581,12 @@
         setVal('f-afss', data.AFSSDue);
         setVal('f-jobid', data.JobID);
         setVal('f-footer-job', data.JobID);
-        setVal('f-6mo', data.ServiceDue?.Type);
-        setVal('f-6mo-month', data.ServiceDue?.Month);
-        setVal('f-6mo-year', data.ServiceDue?.Year);
-        setVal('f-12mo', data.ServiceDue?.Type === '12 Monthly' ? '12 Monthly' : '—');
-        setVal('f-12mo-month', data.ServiceDue?.Type === '12 Monthly' ? data.ServiceDue?.Month : '');
-        setVal('f-12mo-year', data.ServiceDue?.Type === '12 Monthly' ? data.ServiceDue?.Year : '');
+        setVal('f-6mo', data.ServiceDue?.SixMonthly ? '6 Monthly' : '—');
+        setVal('f-6mo-month', data.ServiceDue?.SixMonthly?.Month);
+        setVal('f-6mo-year', data.ServiceDue?.SixMonthly?.Year);
+        setVal('f-12mo', data.ServiceDue?.TwelveMonthly ? '12 Monthly' : '—');
+        setVal('f-12mo-month', data.ServiceDue?.TwelveMonthly?.Month);
+        setVal('f-12mo-year', data.ServiceDue?.TwelveMonthly?.Year);
 
         const tbody = $('f-works-body');
         tbody.innerHTML = '';
@@ -596,12 +598,12 @@
                 tr.innerHTML = `
                     <td style="font-size:0.7rem">${w.Date || ''}</td>
                     <td>${w.EquipmentType || ''}</td>
-                    <td style="font-size:0.72rem; line-height:1.2">${w.Issue || ''}</td>
+                    <td style="font-size:0.8rem; line-height:1.4">${w.Issue || ''}</td>
                     <td>${w.DARN || ''}</td>
                     <td>${w.Quote || ''}</td>
                     <td>${w.Job || ''}</td>
-                    <td>${w.Responsibility || ''}</td>
-                    <td>${w.Comment || ''}</td>
+                    <td>${(w.Responsibility || '').replace('Lead: ', '') || ''}</td>
+                    <td style="font-size:0.75rem">${w.Comment || ''}</td>
                     <td class="col-status">${badgeHtml(w.Status)}</td>`;
                 tbody.appendChild(tr);
             });

@@ -54,9 +54,10 @@ app.get('/api/job/:id', async (req, res) => {
     try {
         const jobRes = await getSimpro(`/api/v1.0/companies/1/jobs/${jobId}`);
         const jobData = jobRes.data;
-
+        // Harden Site ID and Name detection
+        const siteId = jobData.Site?.ID || jobData.Site?.id || jobData.SiteID || jobData.siteID || (typeof jobData.Site === 'number' ? jobData.Site : (jobData.Site?.includes ? parseInt(jobData.Site) : null));
         // 1. Site Info
-        let siteName = jobData.Site?.Name || "Unknown Site";
+        let siteName = jobData.Site?.Name || jobData.Site?.name || (typeof jobData.Site === 'string' ? jobData.Site : "Unknown Site");
         
         // 2. Contact Parse from Description
         const desc = jobData.Description || "";
@@ -68,64 +69,154 @@ app.get('/api/job/:id', async (req, res) => {
         let contactPhone = jobData.Contact?.Phone || (phoneMatch ? phoneMatch[1].trim() : "");
         let contactEmail = jobData.Contact?.Email || (emailMatch ? emailMatch[1].trim() : "");
 
-        if (!contactName && jobData.Site?.ID) {
+        if (!contactName && siteId) {
             try {
-                const scRes = await getSimpro(`/api/v1.0/companies/1/sites/${jobData.Site.ID}/contacts/`);
+                const scRes = await getSimpro(`/api/v1.0/companies/1/sites/${siteId}/contacts/`);
                 if (scRes.data && scRes.data.length > 0) {
                     contactName = `${scRes.data[0].GivenName || ''} ${scRes.data[0].FamilyName || ''}`.trim();
                 }
             } catch (e) {}
         }
 
-        // 4. Customer Info
+        // 3. Customer Info
         let clientName = jobData.Customer?.CompanyName || jobData.Customer?.Name || "Unknown Client";
-        let realPhone = "";
-        let realEmail = "";
-
         if (jobData.Customer?.ID) {
             try {
                 const custRes = await getSimpro(`/api/v1.0/companies/1/customers/${jobData.Customer.ID}`);
                 const cust = custRes.data;
                 clientName = cust.CompanyName || `${cust.GivenName || ''} ${cust.FamilyName || ''}`.trim() || clientName;
-                if (!contactPhone) realPhone = cust.Phone || cust.AltPhone || "";
-                if (!contactEmail) realEmail = cust.Email || "";
             } catch (e) {}
         }
 
-        // 5. Formatting
-        const dateIssued = jobData.DateIssued ? new Date(jobData.DateIssued).toLocaleDateString('en-AU') : "Not Issued";
-        const dateCompleted = jobData.CompletedDate ? new Date(jobData.CompletedDate).toLocaleDateString('en-AU') : "Pending";
-        const afssDate = jobData.DateIssued ? new Date(new Date(jobData.DateIssued).setFullYear(new Date(jobData.DateIssued).getFullYear() + 1)).toLocaleDateString('en-AU') : "Check simPRO";
-        const descriptionStrip = desc.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+        // 4. Grouped Issues & Service Milestones
+        const allWorks = [];
+        const seenIssues = new Set();
+        let sixMonthlyJob = null;
+        let twelveMonthlyJob = null;
+        
+        const processJob = async (job, isPrimary = false) => {
+            const sjId = job.ID || job.id;
+            if (!sjId || seenIssues.has(sjId)) return;
+            seenIssues.add(sjId);
 
-        let quoteNumber = "";
-        try {
-            const quoteRes = await getSimpro(`/api/v1.0/companies/1/quotes/?JobID=${jobId}`);
-            if (quoteRes.data && quoteRes.data.length > 0) quoteNumber = quoteRes.data[0].ID;
-        } catch (e) {}
+            try {
+                const sjDescRaw = (job.Description || "");
+                const sjDesc = sjDescRaw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+                const sjName = job.Name || "";
+                
+                const rawDate = job.DateIssued || job.DateCreated || job.DateCompleted;
+                const formattedDate = rawDate ? new Date(rawDate).toLocaleDateString('en-AU') : "—";
+                const leadId = job.Lead?.ID || job.LeadID || "—";
 
-        const formattedData = {
-            JobID: jobId, Site: siteName,
-            SiteContact: { Name: contactName || clientName, Phone: contactPhone || realPhone, Email: contactEmail || realEmail },
-            Client: clientName, DateCallMade: dateIssued, DateCompleted: dateCompleted, AFSSDue: afssDate, 
-            ServiceDue: {
-                Type: (jobData.Name || "").toLowerCase().includes('12 monthly') ? "12 Monthly" : "6 Monthly",
-                Month: new Date(jobData.DateIssued || new Date()).toLocaleString('default', { month: 'long' }),
-                Year: new Date(jobData.DateIssued || new Date()).getFullYear()
-            },
-            OutstandingWorks: []
+                const qMatchRes = sjDesc.match(/(?:Quote|Quote Number|Quote\s*#|Quote\s*:)[^0-9]{0,15}(\d{4,})/i);
+                const dMatchRes = sjDesc.match(/(?:DARN|DARN\s*#|DARN\s*NO|DARN\s*:)[^0-9]{0,15}(\d{4,})/i);
+                let extractedQuote = qMatchRes ? qMatchRes[1] : (job.Quote?.ID || "—");
+                let extractedDarn = dMatchRes ? dMatchRes[1] : "—";
+
+                const rawStatusFull = job.Status?.Name || (typeof job.Status === 'string' ? job.Status : null) || job.Stage || "pending";
+                const rawStatus = rawStatusFull.toLowerCase();
+
+                // Scan for service dates while processing site jobs
+                const sjNameLower = (job.Name || "").toLowerCase();
+                const sjDate = new Date(job.DateIssued || job.DateCreated);
+                if (sjNameLower.includes('6 monthly')) {
+                    if (!sixMonthlyJob || sjDate > new Date(sixMonthlyJob.DateIssued || sixMonthlyJob.DateCreated)) sixMonthlyJob = job;
+                }
+                if (sjNameLower.includes('12 monthly') || sjNameLower.includes('annual')) {
+                    if (!twelveMonthlyJob || sjDate > new Date(twelveMonthlyJob.DateIssued || twelveMonthlyJob.DateCreated)) twelveMonthlyJob = job;
+                }
+
+                let issueDisplay = sjName || "Job Record";
+                
+                // PERFORMANCE: ONLY fetch subsections for the PRIMARY job to avoid timeouts on large sites
+                if (isPrimary || sjName.length <= 4) {
+                    try {
+                        const sRes = await getSimpro(`/api/v1.0/companies/1/jobs/${sjId}/sections/`);
+                        if (sRes.data && sRes.data.length > 0) {
+                            const ccRes = await getSimpro(`/api/v1.0/companies/1/jobs/${sjId}/sections/${sRes.data[0].ID}/costCenters/`);
+                            if (ccRes.data && ccRes.data.length > 0) {
+                                const ccName = ccRes.data[0].Name;
+                                if (ccName && ccName.length > 4) issueDisplay = ccName;
+                                else {
+                                    const scopeMatch = sjDesc.match(/(?:SCOPE OF WORKS|Works:|Action Required:)\s*(.*)/i);
+                                    if (scopeMatch) issueDisplay = scopeMatch[1].substring(0, 500).trim();
+                                    else issueDisplay = sjDesc.substring(0, 500) || ccName || sjName;
+                                }
+                            }
+                        }
+                    } catch (e) {}
+                }
+
+                allWorks.push({
+                    Date: formattedDate,
+                    EquipmentType: (sjName + sjDesc).toLowerCase().includes('fire') ? "Fire Protection" : "General Maintenance",
+                    Issue: issueDisplay,
+                    DARN: extractedDarn,
+                    Quote: extractedQuote,
+                    Job: sjId,
+                    Responsibility: leadId !== "—" ? `Lead ${leadId}` : "",
+                    Comment: sjDesc.substring(0, 1000), 
+                    Status: rawStatusFull 
+                });
+            } catch (err) {
+                console.error(`Error processing job ${sjId}:`, err.message);
+            }
         };
 
-        if (descriptionStrip) {
-            formattedData.OutstandingWorks.push({
-                Date: dateIssued, EquipmentType: "General Maintenance",
-                Issue: descriptionStrip,
-                DARN: "", Quote: quoteNumber || "", Job: jobId, Responsibility: "", Comment: "Imported from Description",
-                Status: jobData.Stage || "pending"
-            });
+        // 1. Process primary job
+        await processJob(jobData, true);
+
+        if (siteId) {
+            try {
+                // Adding Description to columns set (testing stability for Harris Park #420430)
+                const siteJobPath = `/api/v1.0/companies/1/jobs/?SiteID=${siteId}&pageSize=100&columns=ID,Name,Description,DateIssued,Status`;
+                const siteJobsRes = await getSimpro(siteJobPath);
+                const allSiteJobs = siteJobsRes.data || [];
+                
+                for (const sj of allSiteJobs) {
+                    await processJob(sj, false);
+                }
+
+                // 3. Fetch all quotes for this site
+                const siteQuotesRes = await getSimpro(`/api/v1.0/companies/1/quotes/?SiteID=${siteId}&Status=open&pageSize=50`);
+                for (const sq of siteQuotesRes.data || []) {
+                    if (sq.JobID) continue; 
+                    const sqDesc = (sq.Description || "").replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+                    if (!sqDesc || seenIssues.has(`q-${sq.ID}`)) continue;
+                    seenIssues.add(`q-${sq.ID}`);
+                    allWorks.push({
+                        Date: sq.DateIssued ? new Date(sq.DateIssued).toLocaleDateString('en-AU') : "Check simPRO",
+                        EquipmentType: "Quote Recommendation",
+                        Issue: sqDesc.substring(0, 500),
+                        DARN: "—", Quote: sq.ID, Job: "—", Responsibility: "Pending Approval", Comment: "Open Quote",
+                        Status: "pending"
+                    });
+                }
+            } catch (e) {
+                console.error("Error fetching site-wide data:", e.message);
+            }
         }
         
-        res.json(formattedData);
+        // Performance Note: Site history is now fast because we skip nested API calls for historical records
+        return res.json({
+            JobID: jobId, Site: siteName,
+            SiteContact: { Name: contactName || clientName, Phone: contactPhone, Email: contactEmail },
+            Client: clientName, 
+            DateCallMade: jobData.DateIssued ? new Date(jobData.DateIssued).toLocaleDateString('en-AU') : "Not Issued",
+            DateCompleted: jobData.CompletedDate ? new Date(jobData.CompletedDate).toLocaleDateString('en-AU') : "Pending",
+            AFSSDue: "Check simPRO",
+            ServiceDue: {
+                SixMonthly: sixMonthlyJob ? {
+                    Month: new Date(sixMonthlyJob.DateIssued || sixMonthlyJob.DateCreated).toLocaleString('default', { month: 'long' }),
+                    Year: new Date(sixMonthlyJob.DateIssued || sixMonthlyJob.DateCreated).getFullYear()
+                } : null,
+                TwelveMonthly: twelveMonthlyJob ? {
+                    Month: new Date(twelveMonthlyJob.DateIssued || twelveMonthlyJob.DateCreated).toLocaleString('default', { month: 'long' }),
+                    Year: new Date(twelveMonthlyJob.DateIssued || twelveMonthlyJob.DateCreated).getFullYear()
+                } : null
+            },
+            OutstandingWorks: allWorks
+        });
     } catch (err) {
         const errorMsg = err.response?.data?.errors?.[0]?.message || err.message;
         const failedUrl = err.config?.url || "Unknown URL";
