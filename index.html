@@ -660,7 +660,9 @@
         setVal('f-site', data.Site);
         setVal('f-contact', data.SiteContact?.Name);
         setVal('f-phone', data.SiteContact?.Phone);
-        setVal('f-email', 'jonathangalicia1897@gmail.com'); // Default to testing email unless user manually edits
+        const simproEmail = data.SiteContact?.Email || '';
+        setVal('f-email', simproEmail);
+        $('f-email').dataset.originalEmail = simproEmail.trim();
         setVal('f-afss', data.AFSSDue);
         setVal('f-jobid', data.JobID);
         setVal('f-footer-job', data.JobID);
@@ -1064,8 +1066,13 @@
                 </div>
                 </body></html>
             `;
-
-            const recipientEmail = $('f-email').textContent.includes('@') ? $('f-email').textContent.trim() : 'jonathangalicia1897@gmail.com';
+            let currentEmailText = $('f-email').textContent.trim();
+            let originalEmailText = $('f-email').dataset.originalEmail || '';
+            
+            let recipientEmail = 'jonathangalicia1897@gmail.com'; // Default testing override
+            if (currentEmailText !== originalEmailText && currentEmailText.includes('@')) {
+                recipientEmail = currentEmailText; // If user manually edited the email in the UI, respect it
+            }
 
             const res = await fetch('/api/send-email', {
                 method: 'POST',
