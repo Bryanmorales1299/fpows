@@ -15,105 +15,109 @@
             position: sticky; top: 0; z-index: 100;
             background: var(--dark);
             display: flex; align-items: center; justify-content: space-between;
-            padding: 12px 28px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            gap: 16px; flex-wrap: wrap;
+            padding: 14px 28px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            gap: 20px;
         }
-        .control-bar .brand { color: #fff; font-size: 1rem; font-weight: 700; white-space: nowrap; }
-        .control-bar .brand span { color: var(--accent); }
+        .control-bar .brand { 
+            color: #fff; font-size: 1rem; font-weight: 700; white-space: nowrap;
+            letter-spacing: 0.5px;
+        }
+        .control-bar .brand span { color: var(--accent); opacity: 0.9; }
 
-        .search-row { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 260px; max-width: 520px; }
-        .search-row input {
-            flex: 1; padding: 9px 16px; border-radius: 8px; border: 2px solid #344;
-            background: #2a2a40; color: #fff; font-family: 'Outfit', sans-serif;
-            font-size: 0.9rem; outline: none; transition: border-color 0.2s;
+        .search-row { 
+            display: flex; align-items: center; gap: 12px; 
+            flex: 1; justify-content: flex-end;
+            max-width: 800px;
         }
-        .search-row input:focus { border-color: var(--accent); }
-        .search-row input::placeholder { color: #667; }
+        .search-row input, .search-row select {
+            padding: 10px 16px; border-radius: 8px; border: 1px solid #3d3d5c;
+            background: #23233b; color: #fff; font-family: 'Outfit', sans-serif;
+            font-size: 0.9rem; outline: none; transition: all 0.2s ease;
+            height: 42px;
+        }
+        .search-row select { flex: 2; min-width: 250px; cursor: pointer; }
+        .search-row input { flex: 0.5; min-width: 140px; }
+        
+        .search-row input:focus, .search-row select:focus { 
+            border-color: var(--accent); background: #2a2a45;
+            box-shadow: 0 0 0 3px rgba(230,57,70,0.15);
+        }
 
         .btn {
-            background: linear-gradient(135deg, #e63946, #c1121f);
-            color: white; border: none; padding: 9px 22px;
+            height: 42px; background: linear-gradient(135deg, #e63946, #c1121f);
+            color: white; border: none; padding: 0 24px;
             font-size: 0.9rem; font-weight: 700; border-radius: 8px;
-            cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 7px;
-            transition: all 0.25s ease; box-shadow: 0 3px 12px rgba(230,57,70,0.3);
+            cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 8px;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(230,57,70,0.3);
         }
-        .btn:hover { transform: scale(1.04); box-shadow: 0 5px 18px rgba(230,57,70,0.45); }
-        .btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+        .btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(230,57,70,0.45); }
+        .btn:active { transform: translateY(0); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
         .btn-outline {
-            background: transparent; border: 2px solid #445;
+            background: rgba(255,255,255,0.05); border: 1px solid #4d4d70;
             color: #ccc; box-shadow: none;
         }
-        .btn-outline:hover { border-color: #aaa; color: #fff; box-shadow: none; }
+        .btn-outline:hover { background: rgba(255,255,255,0.1); border-color: #6d6d90; color: #fff; }
 
         .status-pill {
-            padding: 5px 13px; border-radius: 20px; font-size: 0.78rem; font-weight: 600;
-            white-space: nowrap;
+            padding: 6px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 700;
+            white-space: nowrap; letter-spacing: 0.3px; min-width: 140px; text-align: center;
         }
-        .pill-waiting  { background: #2d2d44; color: #9ea7d0; }
-        .pill-loading  { background: #1a3a5c; color: #7ec8f5; }
-        .pill-done     { background: #1a3d2e; color: #6ee7a0; }
-        .pill-error    { background: #3d1a1a; color: #f59a9a; }
+        .pill-waiting  { background: #23233b; color: #8e99c5; border: 1px solid #3d3d5c; }
+        .pill-loading  { background: #1a3a5c; color: #7ec8f5; border: 1px solid #3498db; }
+        .pill-done     { background: #102e1f; color: #52cc8a; border: 1px solid #27ae60; }
+        .pill-error    { background: #2e1010; color: #cc5252; border: 1px solid #c0392b; }
 
         /* ── Page wrapper ── */
-        .page-wrapper { max-width: 1200px; margin: 28px auto; padding: 0 20px 60px; }
+        .page-wrapper { max-width: 1600px; margin: 30px auto; padding: 0 24px 60px; }
 
-        /* ── Error banner ── */
-        #error-banner {
-            display: none; background: #fff2f2; border: 1px solid #f5c0c0;
-            color: #cc2222; padding: 12px 18px; border-radius: 10px;
-            margin-bottom: 18px; font-size: 0.9rem;
-        }
-
-        /* ── FPOWS Form ── */
+        /* ── FPOWS Form UI Alignment ── */
         #fpows-form {
-            background: #fff; border-radius: 12px;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
-            overflow: hidden;
-            opacity: 0.3; transition: opacity 0.5s ease;
+            background: #fff; border-radius: 4px; /* Crisp edges for forms */
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+            border: 1px solid #eee;
+            transition: all 0.4s ease;
         }
-        #fpows-form.loaded { opacity: 1; }
 
         .form-header {
-            display: flex; justify-content: space-between; align-items: flex-start;
-            padding: 18px 24px; border-bottom: 3px solid #e8e8e8;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 24px 30px; border-bottom: 2px solid #2c2c2c;
         }
         .logo-block {
-            width: 190px; height: 72px; background: #cc2222;
-            border-radius: 8px; display: flex; align-items: center; justify-content: center;
-            color: white; font-weight: 700; font-size: 1.4rem; letter-spacing: 3px;
+            width: 160px; height: 60px; background: #cc2222;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: 800; font-size: 1.5rem; letter-spacing: 4px;
         }
-        .company-info { text-align: right; font-size: 0.73rem; color: #444; line-height: 1.65; }
-        .company-info strong { font-size: 0.82rem; color: #111; }
+        .company-info { text-align: right; font-size: 0.75rem; color: #333; line-height: 1.7; }
 
-        .form-title { text-align: center; padding: 16px 24px 10px; border-bottom: 2px solid #eee; }
-        .form-title h1 { font-size: 1.45rem; font-weight: 700; color: #111; text-transform: uppercase; letter-spacing: 1px; }
-        .form-title h2 { font-size: 1rem; font-weight: 400; color: #444; margin-top: 4px; }
-        .form-title h2 span { color: var(--red); font-weight: 700; }
+        .form-title { text-align: center; padding: 20px 0; border-bottom: 1px solid #eee; }
+        .form-title h1 { font-size: 1.5rem; font-weight: 800; color: #000; text-transform: uppercase; letter-spacing: 2px; }
+        .form-title h2 { font-size: 1.1rem; color: #666; margin-top: 6px; }
 
-        /* Meta grids */
-        .meta-row { display: grid; border-bottom: 1px solid #ddd; }
-        .meta-cell { padding: 8px 14px; border-right: 1px solid #e0e0e0; }
+        .meta-row { display: grid; border-bottom: 1px solid #e8e8e8; }
+        .meta-cell { padding: 12px 16px; border-right: 1px solid #e8e8e8; display: flex; flex-direction: column; justify-content: center; }
         .meta-cell:last-child { border-right: none; }
-        .meta-cell .lbl {
-            font-size: 0.62rem; font-weight: 700; text-transform: uppercase;
-            color: #999; letter-spacing: 0.5px; margin-bottom: 3px;
-        }
-        .meta-cell .val { font-size: 0.83rem; color: #111; font-weight: 500; min-height: 17px; }
-        .placeholder-text { color: #ccc; font-style: italic; }
+        .meta-cell .lbl { font-size: 0.65rem; font-weight: 700; color: #888; text-transform: uppercase; margin-bottom: 4px; }
+        .meta-cell .val { font-size: 0.9rem; color: #111; font-weight: 600; line-height: 1.3; }
 
-        /* Table */
-        .works-table { width: 100%; border-collapse: collapse; }
+        /* Table Alignment */
+        .works-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         .works-table th {
-            background: #2c2c2c; color: #fff; padding: 7px 10px;
-            font-size: 0.68rem; text-transform: uppercase; font-weight: 700;
-            letter-spacing: 0.4px; text-align: left; border-right: 1px solid #444;
+            background: #2c2c2c; color: #fff; padding: 10px 8px;
+            font-size: 0.65rem; text-transform: uppercase; font-weight: 700;
+            text-align: left; border-right: 1px solid #444;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
-        .works-table th:last-child { border-right: none; }
         .works-table td {
-            padding: 8px 10px; font-size: 0.79rem; color: #222;
+            padding: 12px; font-size: 0.8rem; color: #111;
             border: 1px solid #e8e8e8; vertical-align: top;
+            word-wrap: break-word; line-height: 1.5;
         }
+        .works-table .col-status { text-align: center; vertical-align: middle; }
+        .works-table td[colspan] { text-align: center; color: #aaa; font-style: italic; }
         .works-table tr:nth-child(even) td { background: #f9f9f9; }
         .empty-row td { height: 26px; }
 
@@ -121,6 +125,47 @@
         .s-completed { background: #e6f4ea; color: #1e7e34; }
         .s-pending   { background: #fff3cd; color: #856404; }
         .s-na        { background: #e8e8e8; color: #777; }
+
+        /* Email Modal */
+        .email-modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(26,26,46,0.6); backdrop-filter: blur(6px);
+            z-index: 600; align-items: center; justify-content: center;
+        }
+        .email-modal-overlay.visible { display: flex; }
+        .email-modal {
+            background: white; border-radius: 16px; padding: 32px;
+            width: 480px; max-width: 90vw;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+            animation: chatOpen 0.3s ease;
+        }
+        .email-modal h2 { margin: 0 0 6px; font-size: 1.3rem; color: #1a1a2e; }
+        .email-modal .subtitle { color: #888; font-size: 0.85rem; margin-bottom: 20px; }
+        .email-modal label { display: block; font-size: 0.75rem; font-weight: 700; color: #555; text-transform: uppercase; margin-bottom: 6px; margin-top: 14px; }
+        .email-modal input {
+            width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px;
+            font-family: 'Outfit', sans-serif; font-size: 0.9rem; outline: none;
+            transition: border-color 0.2s;
+        }
+        .email-modal input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(230,57,70,0.1); }
+        .email-modal-actions {
+            display: flex; gap: 12px; margin-top: 24px; justify-content: flex-end;
+        }
+        .email-modal-actions .btn-cancel {
+            padding: 10px 20px; border: 1px solid #ddd; background: #f5f5f5;
+            color: #555; border-radius: 8px; cursor: pointer; font-family: inherit;
+            font-weight: 600; font-size: 0.9rem; transition: all 0.2s;
+        }
+        .email-modal-actions .btn-cancel:hover { background: #eee; }
+        .email-modal-actions .btn-send {
+            padding: 10px 24px; background: linear-gradient(135deg, #27ae60, #1e8449);
+            color: white; border: none; border-radius: 8px; cursor: pointer;
+            font-family: inherit; font-weight: 700; font-size: 0.9rem;
+            box-shadow: 0 4px 12px rgba(39,174,96,0.3); transition: all 0.2s;
+        }
+        .email-modal-actions .btn-send:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(39,174,96,0.4); }
+        .email-modal-actions .btn-send:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .email-modal .send-status { margin-top: 14px; font-size: 0.85rem; text-align: center; min-height: 20px; }
 
         .rec-title {
             text-align: center; padding: 12px; font-size: 0.95rem;
@@ -158,10 +203,181 @@
         @keyframes spin { to { transform: rotate(360deg); } }
 
         @media print {
-            .control-bar, .print-btn, #error-banner { display: none !important; }
-            #fpows-form { box-shadow: none; border-radius: 0; }
-            body { background: white; }
+            @page { margin: 1cm; size: portrait; }
+            .control-bar, .print-btn, #error-banner, #loading-overlay, #agent-sidebar, .email-modal-overlay { display: none !important; }
+            
+            body { background: white; padding: 0; margin: 0; }
+            .page-wrapper { max-width: none; width: 100%; margin: 0; padding: 0; display: block !important; }
+            
+            #fpows-form { 
+                box-shadow: none !important; 
+                border: 1px solid #000 !important; 
+                width: 100% !important;
+                opacity: 1 !important;
+            }
+
+            .works-table { width: 100% !important; table-layout: fixed !important; }
+            
+            /* Explicit column widths for Outstanding Works (10 columns) */
+            #works-table th:nth-child(1), #works-table td:nth-child(1) { width: 45px !important; }
+            #works-table th:nth-child(2), #works-table td:nth-child(2) { width: 85px !important; }
+            #works-table th:nth-child(3), #works-table td:nth-child(3) { width: auto !important; }
+            #works-table th:nth-child(4), #works-table td:nth-child(4) { width: 50px !important; }
+            #works-table th:nth-child(5), #works-table td:nth-child(5) { width: 50px !important; }
+            #works-table th:nth-child(6), #works-table td:nth-child(6) { width: 50px !important; }
+            #works-table th:nth-child(7), #works-table td:nth-child(7) { width: 50px !important; }
+            #works-table th:nth-child(8), #works-table td:nth-child(8) { width: 80px !important; }
+            #works-table th:nth-child(9), #works-table td:nth-child(9) { width: 120px !important; }
+            #works-table th:nth-child(10), #works-table td:nth-child(10) { width: 75px !important; }
+
+            /* Explicit column widths for Recommendations (6 columns) */
+            #rec-table th:nth-child(1), #rec-table td:nth-child(1) { width: 80px !important; }
+            #rec-table th:nth-child(2), #rec-table td:nth-child(2) { width: 100px !important; }
+            #rec-table th:nth-child(3), #rec-table td:nth-child(3) { width: auto !important; }
+            #rec-table th:nth-child(4), #rec-table td:nth-child(4) { width: 100px !important; }
+            #rec-table th:nth-child(5), #rec-table td:nth-child(5) { width: 150px !important; }
+            #rec-table th:nth-child(6), #rec-table td:nth-child(6) { width: 85px !important; }
+
+            .works-table td { font-size: 7.5pt !important; padding: 6px !important; border: 1px solid #000 !important; }
+            .works-table th { background: #eee !important; color: #000 !important; border: 1px solid #000 !important; font-size: 7pt !important; }
+            
+            .meta-cell { border-color: #000 !important; }
+            .meta-row { border-color: #000 !important; }
+            .form-header { border-bottom: 2px solid #000 !important; }
+            .logo-block { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            
+            .status-badge { border: 1px solid #000; padding: 1px 4px; }
         }
+
+        /* Agent Sidebar Styles */
+        .page-layout {
+            display: flex;
+            gap: 24px;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        #fpows-form { flex: 1; min-width: 0; }
+
+        .agent-sidebar {
+            width: 320px;
+            position: sticky;
+            top: 20px;
+            height: fit-content;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .agent-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 16px;
+        }
+
+        .agent-avatar {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #e63946, #b22222);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 12px rgba(230, 57, 70, 0.3);
+        }
+
+        .agent-info h3 { margin: 0; font-size: 1.1rem; color: #333; }
+        .agent-info p { margin: 0; font-size: 0.8rem; color: #888; display: flex; align-items: center; gap: 4px; }
+        .agent-info .status-dot { width: 8px; height: 8px; background: #2a9d8f; border-radius: 50%; }
+
+        .insight-card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid #f0f0f0;
+            transition: transform 0.2s;
+        }
+        .insight-card:hover { transform: translateY(-2px); border-color: #e63946; }
+        .insight-card h4 { margin: 0 0 8px 0; font-size: 0.85rem; color: #444; display: flex; align-items: center; gap: 8px; }
+        .insight-card p { margin: 0; font-size: 0.82rem; color: #666; line-height: 1.4; }
+        .insight-card .tag { 
+            display: inline-block; 
+            margin-top: 10px; 
+            font-size: 0.7rem; 
+            font-weight: 600; 
+            padding: 2px 8px; 
+            border-radius: 4px; 
+            text-transform: uppercase;
+        }
+        .tag-alert { background: #fff1f2; color: #e63946; }
+        .tag-info { background: #f0f9ff; color: #0ea5e9; }
+        .tag-success { background: #f0fdf4; color: #22c55e; }
+
+        /* --- Chatbot Widget Styles --- */
+        #chat-trigger {
+            position: fixed; bottom: 24px; right: 24px;
+            width: 60px; height: 60px; border-radius: 50%;
+            background: linear-gradient(135deg, #e63946, #b22222);
+            color: white; display: flex; align-items: center; justify-content: center;
+            font-size: 1.8rem; cursor: pointer; z-index: 1000;
+            box-shadow: 0 4px 20px rgba(230, 57, 70, 0.4);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        #chat-trigger:hover { transform: scale(1.1) rotate(5deg); box-shadow: 0 6px 25px rgba(230, 57, 70, 0.5); }
+        
+        #chat-window {
+            position: fixed; bottom: 100px; right: 24px;
+            width: 380px; height: 500px; background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(16px); border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 20px; display: none; flex-direction: column; overflow: hidden;
+            box-shadow: 0 15px 45px rgba(0,0,0,0.15); z-index: 1000;
+            transform-origin: bottom right; animation: chatOpen 0.3s ease;
+        }
+        @keyframes chatOpen { from { opacity: 0; transform: scale(0.9) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        
+        .chat-header {
+            padding: 20px; background: var(--dark); color: white;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .chat-header h3 { margin: 0; font-size: 1rem; display: flex; align-items: center; gap: 8px; }
+        .chat-close { cursor: pointer; opacity: 0.7; transition: opacity 0.2s; font-size: 1.2rem; }
+        .chat-close:hover { opacity: 1; }
+
+        .chat-messages {
+            flex: 1; padding: 20px; overflow-y: auto;
+            display: flex; flex-direction: column; gap: 12px;
+            scroll-behavior: smooth; background: #fafafa;
+        }
+        .msg { max-width: 85%; padding: 10px 14px; border-radius: 14px; font-size: 0.9rem; line-height: 1.4; animation: msgFade 0.2s ease; }
+        @keyframes msgFade { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .msg-bot { background: white; border: 1px solid #eee; align-self: flex-start; border-bottom-left-radius: 2px; color: #333; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .msg-user { background: var(--accent); color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+        
+        .chat-input-area { padding: 16px; border-top: 1px solid #eee; display: flex; gap: 10px; background: white; }
+        .chat-input {
+            flex: 1; border: 1px solid #e0e0e0; padding: 10px 14px; border-radius: 10px;
+            outline: none; font-family: inherit; font-size: 0.9rem; transition: border-color 0.2s;
+        }
+        .chat-input:focus { border-color: var(--accent); }
+        .chat-send { background: var(--accent); color: white; border: none; width: 40px; height: 40px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+        .chat-send:disabled { opacity: 0.5; cursor: not-allowed; }
+        .typing-indicator { display: flex; align-items: center; gap: 4px; padding: 10px 14px; background: white; border: 1px solid #eee; border-radius: 14px; border-bottom-left-radius: 2px; align-self: flex-start; width: fit-content; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .typing-indicator span { width: 8px; height: 8px; background: #bbb; border-radius: 50%; display: inline-block; animation: bounce 1.2s infinite; }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0.7); opacity: 0.4; } 40% { transform: scale(1); opacity: 1; } }
     </style>
 </head>
 <body>
@@ -170,11 +386,14 @@
 <div class="control-bar">
     <div class="brand">REDMEN Fire Protection · <span>simPRO → FPOWS</span></div>
     <div class="search-row">
+        <select id="schedule-select">
+            <option value="">Fetching today's jobs...</option>
+        </select>
         <input type="number" id="job-id-input" placeholder="Enter simPRO Job ID…" min="1">
         <button class="btn" id="btn-fetch">🔍 Fetch Job</button>
         <button class="btn btn-outline" id="btn-print" style="display:none">🖨 Print</button>
     </div>
-    <div id="status-pill" class="status-pill pill-waiting">⏳ Enter a Job ID</div>
+    <div id="status-pill" class="status-pill pill-waiting">⏳ Select or Enter Job</div>
 </div>
 
 <!-- Loading Overlay -->
@@ -183,11 +402,14 @@
     <div id="loading-text">Fetching job data from simPRO…</div>
 </div>
 
+<!-- Automatic Email Send Mode Active -->
+
 <div class="page-wrapper">
     <div id="error-banner"></div>
 
-    <!-- FPOWS Form -->
-    <div id="fpows-form">
+    <div class="page-layout">
+        <!-- FPOWS Form -->
+        <div id="fpows-form">
 
         <!-- Header -->
         <div class="form-header">
@@ -282,41 +504,42 @@
         </div>
 
         <!-- Outstanding Works Table -->
-        <table class="works-table">
+        <table class="works-table" id="works-table">
             <thead>
                 <tr>
                     <th style="width:6%">Date</th>
-                    <th style="width:10%">Equipment Type</th>
-                    <th style="width:20%">Issue</th>
-                    <th style="width:7%">DARN #</th>
-                    <th style="width:7%">Quote #</th>
-                    <th style="width:7%">Job #</th>
-                    <th style="width:10%">Responsibility</th>
-                    <th style="width:25%">Comment</th>
-                    <th style="width:8%">Status</th>
+                    <th style="width:9%">Equipment Type</th>
+                    <th style="width:30%">Issue</th>
+                    <th style="width:7%">Lead #</th>
+                    <th style="width:6%">DARN #</th>
+                    <th style="width:6%">Quote #</th>
+                    <th style="width:6%">Job #</th>
+                    <th style="width:11%">Responsibility</th>
+                    <th style="width:10%">Comment</th>
+                    <th style="width:9%" class="col-status">Status</th>
                 </tr>
             </thead>
             <tbody id="f-works-body">
-                <tr class="empty-row"><td colspan="9">&nbsp;</td></tr>
-                <tr class="empty-row"><td colspan="9">&nbsp;</td></tr>
-                <tr class="empty-row"><td colspan="9">&nbsp;</td></tr>
-                <tr class="empty-row"><td colspan="9">&nbsp;</td></tr>
-                <tr class="empty-row"><td colspan="9">&nbsp;</td></tr>
-                <tr class="empty-row"><td colspan="9">&nbsp;</td></tr>
+                <tr class="empty-row"><td colspan="10">&nbsp;</td></tr>
+                <tr class="empty-row"><td colspan="10">&nbsp;</td></tr>
+                <tr class="empty-row"><td colspan="10">&nbsp;</td></tr>
+                <tr class="empty-row"><td colspan="10">&nbsp;</td></tr>
+                <tr class="empty-row"><td colspan="10">&nbsp;</td></tr>
+                <tr class="empty-row"><td colspan="10">&nbsp;</td></tr>
             </tbody>
         </table>
 
         <!-- Recommendations -->
         <div class="rec-title">Recommendations Made to Client</div>
-        <table class="works-table">
+        <table class="works-table" id="rec-table">
             <thead>
                 <tr>
-                    <th style="width:9%">Date of Discussion</th>
-                    <th style="width:11%">Equipment Type</th>
-                    <th style="width:26%">Issue</th>
-                    <th style="width:13%">Responsibility</th>
-                    <th style="width:30%">Comment</th>
-                    <th style="width:11%">Status</th>
+                    <th style="width:12%">Date of Discussion</th>
+                    <th style="width:12%">Equipment Type</th>
+                    <th style="width:24%">Issue</th>
+                    <th style="width:15%">Responsibility</th>
+                    <th style="width:24%">Comment</th>
+                    <th style="width:13%" class="col-status">Status</th>
                 </tr>
             </thead>
             <tbody>
@@ -333,7 +556,48 @@
             <div>VKAM: <strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</strong></div>
         </div>
 
-    </div><!-- #fpows-form -->
+        </div><!-- #fpows-form -->
+
+        <!-- Agent Sidebar -->
+        <aside class="agent-sidebar" id="agent-sidebar">
+            <div class="agent-header">
+                <div class="agent-avatar">🤖</div>
+                <div class="agent-info">
+                    <h3>FPOWS Agent</h3>
+                    <p><span class="status-dot"></span> simPRO Online</p>
+                </div>
+            </div>
+
+            <div id="agent-insights">
+                <div class="insight-card">
+                    <h4> 👋 Hello!</h4>
+                    <p>Select a job from the list above to get real-time insights and data checks.</p>
+                </div>
+            </div>
+
+            <div class="insight-card" style="margin-top: auto; background: #333; border: none;">
+                <p style="font-size: 0.7rem; opacity: 0.8; color: white;">Agent version 1.2 · Connected to Company 1</p>
+            </div>
+        </aside>
+    </div><!-- .page-layout -->
+</div><!-- .page-wrapper -->
+
+<!-- Chatbot Widget UI -->
+<div id="chat-trigger">🤖</div>
+<div id="chat-window">
+    <div class="chat-header">
+        <h3>🤖 FPOWS Assistant</h3>
+        <span class="chat-close" id="chat-close">&times;</span>
+    </div>
+    <div class="chat-messages" id="chat-messages">
+        <div class="msg msg-bot">
+            Welcome! I'm your FPOWS controller. Ask me about your jobs or status updates. How can I assist you right now?
+        </div>
+    </div>
+    <div class="chat-input-area">
+        <input type="text" class="chat-input" id="chat-input" placeholder="Type a command...">
+        <button class="chat-send" id="chat-send">➤</button>
+    </div>
 </div>
 
 <script>
@@ -351,9 +615,8 @@
     }
 
     function renderForm(data) {
-        const today = new Date().toLocaleDateString('en-AU');
-        setVal('f-date', today);
-        setVal('f-call-date', today);
+        setVal('f-date', data.DateCompleted || 'Pending');
+        setVal('f-call-date', data.DateCallMade || 'Not Issued');
         setVal('f-client', data.Client);
         setVal('f-site', data.Site);
         setVal('f-contact', data.SiteContact?.Name);
@@ -362,12 +625,12 @@
         setVal('f-afss', data.AFSSDue);
         setVal('f-jobid', data.JobID);
         setVal('f-footer-job', data.JobID);
-        setVal('f-6mo', data.ServiceDue?.Type || '6 Monthly');
+        setVal('f-6mo', data.ServiceDue?.Type);
         setVal('f-6mo-month', data.ServiceDue?.Month);
         setVal('f-6mo-year', data.ServiceDue?.Year);
-        setVal('f-12mo', '12 Monthly');
-        setVal('f-12mo-month', '');
-        setVal('f-12mo-year', '');
+        setVal('f-12mo', data.ServiceDue?.Type === '12 Monthly' ? '12 Monthly' : '—');
+        setVal('f-12mo-month', data.ServiceDue?.Type === '12 Monthly' ? data.ServiceDue?.Month : '');
+        setVal('f-12mo-year', data.ServiceDue?.Type === '12 Monthly' ? data.ServiceDue?.Year : '');
 
         const tbody = $('f-works-body');
         tbody.innerHTML = '';
@@ -377,15 +640,16 @@
             works.forEach(w => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${w.Date || ''}</td>
+                    <td style="font-size:0.7rem">${w.Date || ''}</td>
                     <td>${w.EquipmentType || ''}</td>
-                    <td>${w.Issue || ''}</td>
+                    <td style="font-size:0.72rem; line-height:1.2">${w.Issue || ''}</td>
+                    <td>${w.Lead || ''}</td>
                     <td>${w.DARN || ''}</td>
                     <td>${w.Quote || ''}</td>
                     <td>${w.Job || ''}</td>
                     <td>${w.Responsibility || ''}</td>
                     <td>${w.Comment || ''}</td>
-                    <td>${badgeHtml(w.Status)}</td>`;
+                    <td class="col-status">${badgeHtml(w.Status)}</td>`;
                 tbody.appendChild(tr);
             });
         }
@@ -395,12 +659,69 @@
         for (let i = 0; i < fill; i++) {
             const tr = document.createElement('tr');
             tr.className = 'empty-row';
-            tr.innerHTML = '<td colspan="9">&nbsp;</td>';
+            tr.innerHTML = '<td colspan="9">&nbsp;</td><td class="col-status">&nbsp;</td>';
             tbody.appendChild(tr);
         }
 
         $('fpows-form').classList.add('loaded');
         $('btn-print').style.display = 'inline-flex';
+        window.__lastJobData = data;
+        updateAgent(data);
+    }
+
+    function updateAgent(data) {
+        const statusText = document.querySelector('.agent-info p');
+        if (statusText) statusText.innerHTML = '<span class="status-dot"></span> Job Analysis Active';
+
+        const insights = $('agent-insights');
+        insights.innerHTML = '';
+
+        // 1. Contact Insight
+        let contactHtml = '';
+        if (data.SiteContact?.Name && data.SiteContact.Name.toLowerCase() !== data.Client.toLowerCase()) {
+            contactHtml = `
+                <div class="insight-card">
+                    <h4>👤 Contact Discovery</h4>
+                    <p>I found <strong>${data.SiteContact.Name}</strong> as the primary contact for this job. All phone and email fields have been mapped from their profile.</p>
+                    <span class="tag tag-success">Matched</span>
+                </div>`;
+        } else {
+             contactHtml = `
+                <div class="insight-card">
+                    <h4>⚠️ Contact Check</h4>
+                    <p>No primary contact found. I've used client details as fallback. Verify "Site Contacts" in simPRO.</p>
+                    <span class="tag tag-alert">Review Needed</span>
+                </div>`;
+        }
+
+        // 2. Quote Insight
+        let quoteHtml = '';
+        const hasQuote = data.OutstandingWorks && data.OutstandingWorks.some(w => w.Quote);
+        if (hasQuote) {
+            quoteHtml = `
+                <div class="insight-card">
+                    <h4>💰 Linked Quote</h4>
+                    <p>Great! I detected a linked quote in simPRO UAT. This has been automatically added to the works table.</p>
+                    <span class="tag tag-info">Auto-Mapped</span>
+                </div>`;
+        } else {
+             quoteHtml = `
+                <div class="insight-card">
+                    <h4>🔍 Quote Scan</h4>
+                    <p>No linked quote detected for Job #${data.JobID}. If one exists, ensure it's linked in simPRO to see it here.</p>
+                    <span class="tag tag-info">Not Found</span>
+                </div>`;
+        }
+
+        // 3. AFSS Insight
+        let afssHtml = `
+            <div class="insight-card">
+                <h4>📅 AFSS Schedule</h4>
+                <p>The estimated AFSS due date is <strong>${data.AFSSDue}</strong>. confirmar this matches the standard 12-month issuance cycle for Job #${data.JobID}.</p>
+                <span class="tag tag-info">Schedule</span>
+            </div>`;
+
+        insights.innerHTML = contactHtml + quoteHtml + afssHtml;
     }
 
     function showError(msg) {
@@ -435,6 +756,9 @@
             $('status-pill').className = 'status-pill pill-done';
             $('status-pill').textContent = `✅ Job #${jobId} loaded`;
             $('btn-fetch').textContent = '🔄 Reload';
+            
+            // Auto dispatch email
+            await autoSendEmail(data, jobId);
         } catch (err) {
             showError(err.message);
             $('status-pill').className = 'status-pill pill-error';
@@ -445,11 +769,80 @@
         }
     }
 
+    async function initSchedules() {
+        try {
+            const res = await fetch('/api/schedules/today');
+            const data = await res.json();
+            const select = $('schedule-select');
+            select.innerHTML = '<option value="">-- Select Recent Job --</option>';
+            
+            if (data.schedules && data.schedules.length > 0) {
+                data.schedules.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.jobId;
+                    const datePrefix = s.time && s.time !== 'Recent' ? `[${s.time}] ` : '';
+                    opt.textContent = `${datePrefix}Job #${s.jobId} - ${s.client || 'Unknown Client'}`;
+                    select.appendChild(opt);
+                });
+            } else {
+                select.innerHTML = '<option value="">No recent jobs found</option>';
+            }
+        } catch (err) {
+            $('schedule-select').innerHTML = '<option value="">Failed to load jobs</option>';
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", initSchedules);
+
+    // Auto-fetch if a dropdown item is picked
+    $('schedule-select').addEventListener('change', (e) => {
+        const val = e.target.value;
+        if(val) {
+            $('job-id-input').value = val;
+            fetchJob();
+        }
+    });
+
     $('btn-fetch').addEventListener('click', fetchJob);
     $('job-id-input').addEventListener('keydown', e => { if (e.key === 'Enter') fetchJob(); });
     $('btn-print').addEventListener('click', () => window.print());
-</script>
 
+    // Automatic Email Sender
+    async function autoSendEmail(data, jobId) {
+        let recipientEmail = data.SiteContact?.Email || '';
+        
+        $('status-pill').className = 'status-pill pill-loading';
+        $('status-pill').textContent = '📤 Sending automatic email...';
+
+        // Capture the FPOWS form HTML
+        const formHtml = $('fpows-form').outerHTML;
+        const emailHtml = `
+            <html><head>
+            <style>
+                body { font-family: Arial, sans-serif; }
+                .meta-row { display: grid; border-bottom: 1px solid #ddd; }
+                .meta-cell { padding: 10px 14px; border-right: 1px solid #ddd; }
+                .meta-cell .lbl { font-size: 11px; font-weight: bold; color: #888; text-transform: uppercase; margin-bottom: 4px; }
+                .meta-cell .val { font-size: 14px; color: #111; font-weight: 600; }
+                .works-table { width: 100%; border-collapse: collapse; }
+                .works-table th { background: #2c2c2c; color: #fff; padding: 8px; font-size: 11px; text-transform: uppercase; text-align: left; }
+                .works-table td { padding: 8px; font-size: 12px; border: 1px solid #ddd; }
+                .logo-block { width: 160px; height: 60px; background: #cc2222; color: white; font-weight: 800; font-size: 24px; letter-spacing: 4px; text-align: center; line-height: 60px; }
+                .form-header { display: flex; justify-content: space-between; padding: 20px; border-bottom: 2px solid #2c2c2c; }
+                .form-title { text-align: center; padding: 16px; }
+                .form-title h1 { font-size: 18px; text-transform: uppercase; letter-spacing: 2px; }
+                .status-badge { display: inline-block; padding: 2px 6px; border-radius: 8px; font-size: 10px; font-weight: bold; }
+                .s-completed { background: #e6f4ea; color: #1e7e34; }
+                .s-pending { background: #fff3cd; color: #856404; }
+                .rec-title { text-align: center; padding: 12px; font-weight: bold; text-transform: uppercase; border-top: 2px solid #ddd; }
+                .footer-row { display: flex; justify-content: flex-end; gap: 30px; padding: 12px 24px; border-top: 2px solid #ddd; font-size: 13px; }
+            </style>
+            </head><body>
+            <p style="font-size:13px;color:#888;">This FPOWS Call Sheet was automatically generated and sent by REDMEN Fire Protection Automation.</p>
+            ${formHtml}
+            <hr style="margin-top:30px;border:none;border-top:1px solid #ddd;">
+            <p style="font-size:11px;color:#aaa;">Sent via FPOWS Automation · REDMEN Fire Protection · info@redmen.com.au</p>
+            
 <script>
     // Auto-injected by Agent FPOWS Generator
     const PUSHED_DATA = {
@@ -507,5 +900,320 @@
     });
 </script>
 </body>
+</html>
+        `;
 
+        try {
+            const res = await fetch('/api/send-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    jobId: jobId,
+                    recipientEmail: recipientEmail,
+                    managerEmail: "", // Server will default to MANAGER_EMAIL
+                    htmlContent: emailHtml
+                })
+            });
+            const result = await res.json();
+            if (result.success) {
+                // Flash success, then back to done
+                $('status-pill').className = 'status-pill pill-done';
+                $('status-pill').textContent = `✅ Email sent! Job #${jobId} loaded`;
+                setTimeout(() => {
+                    $('status-pill').textContent = `✅ Job #${jobId} loaded and sent`;
+                }, 3000);
+            } else {
+                throw new Error(result.error);
+            }
+        } catch (err) {
+            console.error("Auto Email Failed:", err);
+            showError("Failed to auto-send email: " + err.message);
+            $('status-pill').className = 'status-pill pill-error';
+            $('status-pill').textContent = `❌ Email Failed for #${jobId}`;
+        }
+    }
+
+    /* --- Chatbot Logic --- */
+    class FPOWSChatbot {
+        constructor() {
+            this.trigger = $('chat-trigger');
+            this.window = $('chat-window');
+            this.close = $('chat-close');
+            this.input = $('chat-input');
+            this.send = $('chat-send');
+            this.messages = $('chat-messages');
+            this.context = { lastIntent: null, lastJobId: null };
+            this.init();
+        }
+
+        init() {
+            this.trigger.onclick = () => this.toggle(true);
+            this.close.onclick = () => this.toggle(false);
+            this.send.onclick = () => this.handleUserMessage();
+            this.input.onkeydown = (e) => { if (e.key === 'Enter') this.handleUserMessage(); };
+        }
+
+        toggle(show) {
+            this.window.style.display = show ? 'flex' : 'none';
+            if (show) this.input.focus();
+        }
+
+        async handleUserMessage() {
+            const text = this.input.value.trim();
+            if (!text) return;
+
+            this.addMessage(text, 'user');
+            this.input.value = '';
+            this.input.disabled = true;
+            this.send.disabled = true;
+
+            const typingBubble = this.showTyping();
+            await this.processResponse(text, typingBubble);
+
+            this.input.disabled = false;
+            this.send.disabled = false;
+            this.input.focus();
+        }
+
+        showTyping() {
+            const div = document.createElement('div');
+            div.className = 'typing-indicator';
+            div.innerHTML = '<span></span><span></span><span></span>';
+            this.messages.appendChild(div);
+            this.messages.scrollTop = this.messages.scrollHeight;
+            return div;
+        }
+
+        addMessage(text, side) {
+            const div = document.createElement('div');
+            div.className = `msg msg-${side}`;
+            div.innerHTML = text;
+            this.messages.appendChild(div);
+            this.messages.scrollTop = this.messages.scrollHeight;
+        }
+
+        extractJobId(text) {
+            // Match patterns like "420433", "job 420433", "job #420433", "#420433"
+            const match = text.match(/(?:job\s*#?\s*|#)(\d{4,})/i) || text.match(/^(\d{4,})$/);
+            return match ? match[1] : null;
+        }
+
+        async fetchJobForChat(jobId) {
+            try {
+                const res = await fetch(`/api/job/${jobId}`);
+                const data = await res.json();
+                if (!res.ok || data.error) throw new Error(data.error || `HTTP ${res.status}`);
+
+                // Also load it into the main form
+                renderForm(data);
+                $('job-id-input').value = jobId;
+                $('status-pill').className = 'status-pill pill-done';
+                $('status-pill').textContent = `✅ Job #${jobId} loaded`;
+                $('btn-fetch').textContent = '🔄 Reload';
+
+                // Build a clean, concise summary for the chat
+                const contact = data.SiteContact || {};
+                const works = data.OutstandingWorks || [];
+                let summary = `<strong>✅ Job #${jobId} — Loaded!</strong><br><br>`;
+                summary += `<strong>Client:</strong> ${data.Client || '—'}<br>`;
+                summary += `<strong>Site:</strong> ${data.Site || '—'}<br>`;
+                summary += `<strong>Contact:</strong> ${contact.Name || '—'}<br>`;
+                summary += `<strong>Phone:</strong> ${contact.Phone || '—'}<br>`;
+                summary += `<strong>Email:</strong> ${contact.Email || '—'}<br>`;
+                summary += `<strong>AFSS Due:</strong> ${data.AFSSDue || '—'}<br>`;
+                summary += `<strong>Service:</strong> ${data.ServiceDue?.Type || '—'} (${data.ServiceDue?.Month || ''} ${data.ServiceDue?.Year || ''})<br>`;
+                summary += `<strong>Outstanding Works:</strong> ${works.length} item(s)`;
+                if (works.length > 0) {
+                    works.forEach((w, i) => {
+                        summary += `<br>📋 <strong>Work ${i+1}:</strong> ${w.EquipmentType || 'N/A'} — Job #${w.Job || '—'} | Status: ${w.Status || 'Pending'}`;
+                    });
+                }
+                summary += `<br><br>📄 Full details are on the form. Want me to verify the data, or are we ready to print?`;
+                return summary;
+            } catch (err) {
+                return `❌ Failed to fetch Job #${jobId}: ${err.message}. Double-check the ID and try again — I don't tolerate typos!`;
+            }
+        }
+
+        normalizeInput(text) {
+            return text.toLowerCase()
+                .replace(/[.,!]/g, '') // Keep question marks for query detection
+                .replace(/\bi'm\b/g, 'i am')
+                .replace(/\bcan't\b/g, 'cannot')
+                .replace(/\bdon't\b/g, 'do not')
+                .replace(/\bwont\b/g, 'will not')
+                .replace(/\bwon't\b/g, 'will not')
+                .trim();
+        }
+
+        getFieldValue(id) {
+            const el = $(id);
+            if (!el) return null;
+            const val = el.textContent.trim();
+            return (val === '—' || val === '') ? null : val;
+        }
+
+        async processResponse(input, typingBubble) {
+            const rawQ = input;
+            const q = this.normalizeInput(input);
+            const isQuestion = rawQ.includes('?');
+            const delay = ms => new Promise(r => setTimeout(r, ms));
+
+            // Universal "Thinking" time for every chat interaction
+            await delay(1100 + Math.random() * 700);
+
+            // 1. Check for Job ID (Highest Priority)
+            const jobId = this.extractJobId(rawQ);
+            if (jobId) {
+                this.context.lastJobId = jobId;
+                const summary = await this.fetchJobForChat(jobId);
+                typingBubble.remove();
+                this.addMessage(summary, 'bot');
+                this.context.lastIntent = 'fetch';
+                return;
+            }
+
+            let res = "";
+            let followUp = "";
+            let intentMatched = null;
+
+            // HELPER: Respond and exit
+            const speak = (content, next, intent) => {
+                res = content;
+                followUp = next;
+                intentMatched = intent;
+            };
+
+            // 2. Questions (Highest Priority after Job ID)
+            // If it ends with ? or starts with 'is/does/can', treat as query
+            const queryKeywords = /verify|audit|check|is (it|this|that) (correct|right|accurate|good|ok|ok\?)|\?|accurate\?|correct\?|right\?|confirm\?/;
+            if (isQuestion || q.match(/^(is|can|does|will|could)\b/) || q.match(queryKeywords)) {
+                const currentJob = this.getFieldValue('f-jobid');
+                if (currentJob) {
+                    const client = this.getFieldValue('f-client');
+                    const site = this.getFieldValue('f-site');
+                    const contact = this.getFieldValue('f-contact');
+                    const phone = this.getFieldValue('f-phone');
+                    const email = this.getFieldValue('f-email');
+                    const afss = this.getFieldValue('f-afss');
+                    const service6 = this.getFieldValue('f-6mo');
+                    const sMonth = this.getFieldValue('f-6mo-month');
+                    const sYear = this.getFieldValue('f-6mo-year');
+
+                    res = `<strong>📍 Step 1: Verification Audit</strong><br>Alright, let's audit Job #${currentJob}:<br><br>`;
+                    res += `✅ <strong>Client:</strong> ${client || 'Unknown'}<br>`;
+                    res += `✅ <strong>Site:</strong> ${site || 'Unknown'}<br>`;
+                    res += `${contact ? '✅' : '⚠️'} <strong>Contact:</strong> ${contact || '<em>Missing!</em>'}<br>`;
+                    res += `${phone ? '✅' : '⚠️'} <strong>Phone:</strong> ${phone || '<em>Missing</em>'}<br>`;
+                    res += `${email ? '✅' : '⚠️'} <strong>Email:</strong> ${email || '<em>Missing</em>'}<br>`;
+                    res += `✅ <strong>AFSS Due:</strong> ${afss || 'N/A'}<br>`;
+                    res += `✅ <strong>Service:</strong> ${service6} — ${sMonth} ${sYear}`;
+                    followUp = "<br><br>That's the report. Does this look accurate to you? If yes, we're ready for <strong>Step 2 (Print)</strong>.";
+                    intentMatched = 'verify';
+                } else {
+                    speak("I can't verify data that doesn't exist — load a job first!", "Type a job number to get started.", "error");
+                }
+            }
+
+            // 3. Negations (Refusals take priority over affirmations)
+            else if (q.match(/\b(no|nope|nah|not yet|not ready|will not|do not|don't|stop|wait|hold on|cancel|don't want|dont want)\b/) || q.match(/not (correct|good|right|ready|accurate|wanting|now)/)) {
+                if (this.context.lastIntent === 'confirm' || this.context.lastIntent === 'verify') {
+                    speak("Understood — I'll hold the line. No printing until you give the word. What needs a closer look?", "You can ask me about specific fields like 'What is the phone number?'.", "negate");
+                } else {
+                    speak("Copy that. Standing by for your next command.", "What's the plan?", "negate");
+                }
+            }
+
+            // 4. Affirmations (Confirming the data is correct)
+            else if (q.match(/\b(yes|yeah|yep|yup|sure|absolutely|confirmed|correct|right|do it|go for it|ready)\b/) || 
+                q.match(/looks (good|correct|accurate|right)|details (are|seem) (good|correct|accurate|right)|everything (is|seems) (good|correct|accurate|right)|i think.*(correct|good|accurate|right)|it is (correct|good|accurate|right)|spot on|perfecto|assessed/)
+            ) {
+                if (this.context.lastIntent === 'verify' || this.context.lastIntent === 'fetch') {
+                    speak("<strong>📍 Step 2: Primed for Printing</strong><br>Outstanding! I've logged your assessment — we're officially cleared for takeoff. The data is verified and the form is primed.", 
+                          "Whenever you're ready, say <strong>print</strong> to generate the sheet, or let me know if you want to double-check a specific detail first!", "confirm");
+                } else {
+                    speak("Confirmed! I like the confidence. What should we tackle next?", "You can type a job ID or ask for help.", "affirm");
+                }
+            }
+            
+            // 5. Specific Data Queries
+            else if (q.match(/site|address|location|where/)) {
+                const site = this.getFieldValue('f-site');
+                if (site) speak(`The site address is <strong>${site}</strong>.`, "Need the contact details as well?", "query_site");
+                else speak("No site is loaded yet.", "Type a job number and I'll find it for you.", "error");
+            }
+            else if (q.match(/contact|who is the|name/)) {
+                const contact = this.getFieldValue('f-contact');
+                if (contact) speak(`The primary contact is <strong>${contact}</strong>.`, "Should I give you their phone number or email?", "query_contact");
+            }
+            else if (q.match(/phone|call|number/)) {
+                const phone = this.getFieldValue('f-phone');
+                if (phone) speak(`The contact number is <strong>${phone}</strong>.`, "Want me to verify the email address too?", "query_phone");
+                else speak("No phone number found for the current job.", "Verify it in simPRO or try another job ID.", "error");
+            }
+            else if (q.match(/email|mail/)) {
+                const email = this.getFieldValue('f-email');
+                if (email) speak(`The email address is <strong>${email}</strong>.`, "Everything looks correct for this contact?", "query_email");
+                else speak("No email address found for this contact.", "You might need to add it in simPRO manually.", "error");
+            }
+            else if (q.match(/afss|due|expiry|date/)) {
+                const afss = this.getFieldValue('f-afss');
+                if (afss) speak(`The AFSS due date is <strong>${afss}</strong>.`, "We still have time, or is it urgent?", "query_afss");
+                else speak("I don't see an AFSS date loaded.", "Check the job ID and try again.", "error");
+            }
+
+            // 6. General Intents
+            else if (q.includes("how are you")) {
+                speak("Functioning at peak efficiency — sharper than a fire axe and twice as ready. My circuits are buzzing with job data and I wouldn't have it any other way.", 
+                      "You though? How are <em>you</em> doing? Any jobs need auditing?", "greeting");
+            } 
+            else if (/\bhi\b|\bhello\b|\bgday\b/.test(q)) {
+                speak("Salutations! The FPOWS Intelligence Agent is online, caffeinated, and ready to command your data.", 
+                      "What are we tackling today? Just type a job number.", "greeting");
+            } 
+            else if (q.match(/thank|thanks|cheers|appreciate|ty\b/)) {
+                const job = this.getFieldValue('f-jobid');
+                speak(job ? `You're very welcome! Job #${job} is looking sharp under my watch.` : "You're very welcome! I live to be helpful. Bring me more jobs!", 
+                      "What's next on the agenda?", "gratitude");
+            } 
+            else if (q.match(/\bbye\b|goodbye|see you|cya|done|finished|all done/)) {
+                speak("Roger that! Go forth and conquer. I'll be here, quietly judging incomplete AFSS data in simPRO until you return.", "Stay safe out there! 🔥", "exit");
+            }
+            else if (q.match(/current|loaded|this job|active|walk|detail|about|tell me/)) {
+                const currentJob = this.getFieldValue('f-jobid');
+                if (currentJob) {
+                    speak(`Locked and loaded! Job #${currentJob}: <strong>${this.getFieldValue('f-client')}</strong> at <strong>${this.getFieldValue('f-site')}</strong>.`, 
+                          "Want me to run a full verification (<strong>Step 1</strong>), or are we heading to print?", "walkthrough");
+                } else {
+                    speak("There's nothing loaded yet — the form is as blank as a Monday morning.", "Give me a job number and I'll fix that.", "error");
+                }
+            } 
+            else if (q.includes("print") || q.includes("save")) {
+                speak("<strong>📍 Final Step: Printing</strong><br>Follow these steps: 1️⃣ Check data. 2️⃣ Click **Print** (top right). 3️⃣ Save as PDF or print.", "Are all details verified?", "print");
+            } 
+            else if (q.includes("who are you")) {
+                speak("I am the FPOWS Intelligence Agent — built to eliminate errors and command your workflows. Legend status? Absolutely.", 
+                      "What can I do for you today?", "greeting");
+            } 
+            else if (q.includes("help") || q.includes("what can you do")) {
+                speak("I'm more capable than I look. I can fetch jobs, verify accuracy (Step 1), and guide you to print (Step 2).", 
+                      "What's the mission?", "help");
+            } 
+            else {
+                const openers = ["Hmm, that's above my pay grade! 🤔", "I'm sharp, but not a mind-reader — yet!", "That's not in my manual, chief."];
+                speak(openers[Math.floor(Math.random() * openers.length)] + " Try a **job number** or ask me to **verify data**.", "Or type **help**.", "unknown");
+            }
+
+            this.context.lastIntent = intentMatched;
+            typingBubble.remove();
+            this.addMessage(`${res} ${followUp}`, 'bot');
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        initSchedules();
+        new FPOWSChatbot();
+    });
+</script>
+</body>
 </html>

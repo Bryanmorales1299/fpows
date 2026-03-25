@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FPOWS Automation – REDMEN Fire Protection</title>
+    <title>FPOWS Automation v1.2.1 – REDMEN Fire Protection</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         :root { --red: #cc2222; --dark: #1a1a2e; --accent: #e63946; --bg: #f0f2f5; }
@@ -126,6 +126,47 @@
         .s-pending   { background: #fff3cd; color: #856404; }
         .s-na        { background: #e8e8e8; color: #777; }
 
+        /* Email Modal */
+        .email-modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(26,26,46,0.6); backdrop-filter: blur(6px);
+            z-index: 600; align-items: center; justify-content: center;
+        }
+        .email-modal-overlay.visible { display: flex; }
+        .email-modal {
+            background: white; border-radius: 16px; padding: 32px;
+            width: 480px; max-width: 90vw;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+            animation: chatOpen 0.3s ease;
+        }
+        .email-modal h2 { margin: 0 0 6px; font-size: 1.3rem; color: #1a1a2e; }
+        .email-modal .subtitle { color: #888; font-size: 0.85rem; margin-bottom: 20px; }
+        .email-modal label { display: block; font-size: 0.75rem; font-weight: 700; color: #555; text-transform: uppercase; margin-bottom: 6px; margin-top: 14px; }
+        .email-modal input {
+            width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px;
+            font-family: 'Outfit', sans-serif; font-size: 0.9rem; outline: none;
+            transition: border-color 0.2s;
+        }
+        .email-modal input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(230,57,70,0.1); }
+        .email-modal-actions {
+            display: flex; gap: 12px; margin-top: 24px; justify-content: flex-end;
+        }
+        .email-modal-actions .btn-cancel {
+            padding: 10px 20px; border: 1px solid #ddd; background: #f5f5f5;
+            color: #555; border-radius: 8px; cursor: pointer; font-family: inherit;
+            font-weight: 600; font-size: 0.9rem; transition: all 0.2s;
+        }
+        .email-modal-actions .btn-cancel:hover { background: #eee; }
+        .email-modal-actions .btn-send {
+            padding: 10px 24px; background: linear-gradient(135deg, #27ae60, #1e8449);
+            color: white; border: none; border-radius: 8px; cursor: pointer;
+            font-family: inherit; font-weight: 700; font-size: 0.9rem;
+            box-shadow: 0 4px 12px rgba(39,174,96,0.3); transition: all 0.2s;
+        }
+        .email-modal-actions .btn-send:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(39,174,96,0.4); }
+        .email-modal-actions .btn-send:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .email-modal .send-status { margin-top: 14px; font-size: 0.85rem; text-align: center; min-height: 20px; }
+
         .rec-title {
             text-align: center; padding: 12px; font-size: 0.95rem;
             font-weight: 700; text-transform: uppercase;
@@ -163,7 +204,7 @@
 
         @media print {
             @page { margin: 1cm; size: portrait; }
-            .control-bar, .print-btn, #error-banner, #loading-overlay, #agent-sidebar { display: none !important; }
+            .control-bar, .print-btn, #error-banner, #loading-overlay, #agent-sidebar, .email-modal-overlay { display: none !important; }
             
             body { background: white; padding: 0; margin: 0; }
             .page-wrapper { max-width: none; width: 100%; margin: 0; padding: 0; display: block !important; }
@@ -350,9 +391,38 @@
         </select>
         <input type="number" id="job-id-input" placeholder="Enter simPRO Job ID…" min="1">
         <button class="btn" id="btn-fetch">🔍 Fetch Job</button>
+        <button class="btn btn-outline" id="btn-history">📋 History</button>
         <button class="btn btn-outline" id="btn-print" style="display:none">🖨 Print</button>
     </div>
     <div id="status-pill" class="status-pill pill-waiting">⏳ Select or Enter Job</div>
+</div>
+
+<!-- History Modal -->
+<div class="email-modal-overlay" id="history-modal-overlay">
+    <div class="email-modal" style="width: 800px; max-width: 95vw;">
+        <h2>📋 Sent History</h2>
+        <p class="subtitle">Latest FPOWS distributions (Last 50)</p>
+        
+        <div style="max-height: 400px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px;">
+            <table class="works-table" style="font-size: 0.75rem;">
+                <thead style="position: sticky; top: 0; z-index: 10;">
+                    <tr>
+                        <th style="width: 25%">Timestamp</th>
+                        <th style="width: 15%">Job ID</th>
+                        <th style="width: 30%">Client</th>
+                        <th style="width: 30%">Recipients</th>
+                    </tr>
+                </thead>
+                <tbody id="history-list-body">
+                    <!-- Logs will be injected here -->
+                </tbody>
+            </table>
+        </div>
+
+        <div class="email-modal-actions">
+            <button class="btn-cancel" id="btn-history-close">Close</button>
+        </div>
+    </div>
 </div>
 
 <!-- Loading Overlay -->
@@ -360,6 +430,8 @@
     <div class="spinner"></div>
     <div id="loading-text">Fetching job data from simPRO…</div>
 </div>
+
+<!-- Automatic Email Send Mode Active -->
 
 <div class="page-wrapper">
     <div id="error-banner"></div>
@@ -533,7 +605,7 @@
             </div>
 
             <div class="insight-card" style="margin-top: auto; background: #333; border: none;">
-                <p style="font-size: 0.7rem; opacity: 0.8; color: white;">Agent version 1.2 · Connected to Company 1</p>
+                <p style="font-size: 0.7rem; opacity: 0.8; color: white;">Agent version 1.2.1 · Connected to Company 1</p>
             </div>
         </aside>
     </div><!-- .page-layout -->
@@ -622,6 +694,7 @@
 
         $('fpows-form').classList.add('loaded');
         $('btn-print').style.display = 'inline-flex';
+        window.__lastJobData = data;
         updateAgent(data);
     }
 
@@ -712,6 +785,9 @@
             $('status-pill').className = 'status-pill pill-done';
             $('status-pill').textContent = `✅ Job #${jobId} loaded`;
             $('btn-fetch').textContent = '🔄 Reload';
+            
+            // Auto dispatch email
+            await autoSendEmail(data, jobId);
         } catch (err) {
             showError(err.message);
             $('status-pill').className = 'status-pill pill-error';
@@ -747,6 +823,47 @@
 
     document.addEventListener("DOMContentLoaded", initSchedules);
 
+    // --- History Logic ---
+    $('btn-history').addEventListener('click', async () => {
+        $('history-modal-overlay').classList.add('visible');
+        const tbody = $('history-list-body');
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">Loading history...</td></tr>';
+        
+        try {
+            const res = await fetch('/api/logs');
+            const data = await res.json();
+            
+            if (data.logs && data.logs.length > 0) {
+                tbody.innerHTML = '';
+                data.logs.forEach(log => {
+                    const tr = document.createElement('tr');
+                    const ts = new Date(log.timestamp).toLocaleString('en-AU', { 
+                        day: '2-digit', month: '2-digit', year: 'numeric', 
+                        hour: '2-digit', minute: '2-digit' 
+                    });
+                    
+                    tr.innerHTML = `
+                        <td style="font-family:monospace">${ts}</td>
+                        <td style="font-weight:700">#${log.jobId || 'N/A'}</td>
+                        <td style="color:#e63946">${log.client || '—'}</td>
+                        <td title="${log.to || ''}" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px;">
+                            ${log.to || '—'}
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } else {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#999;">No history found yet.</td></tr>';
+            }
+        } catch (e) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:red;">Failed to load history.</td></tr>';
+        }
+    });
+
+    $('btn-history-close').addEventListener('click', () => {
+        $('history-modal-overlay').classList.remove('visible');
+    });
+
     // Auto-fetch if a dropdown item is picked
     $('schedule-select').addEventListener('change', (e) => {
         const val = e.target.value;
@@ -759,6 +876,157 @@
     $('btn-fetch').addEventListener('click', fetchJob);
     $('job-id-input').addEventListener('keydown', e => { if (e.key === 'Enter') fetchJob(); });
     $('btn-print').addEventListener('click', () => window.print());
+
+    // Automatic Email Sender
+    async function autoSendEmail(data, jobId) {
+        // Forced for Testing:
+        let recipientEmail = 'jonathangalicia1897@gmail.com'; 
+        // Original Logic (Site Contact Email): data.SiteContact?.Email || '';
+        
+        $('status-pill').className = 'status-pill pill-loading';
+        $('status-pill').textContent = '📤 Sending automatic email...';
+
+        // Build a robust, table-based Email HTML
+        const metadataRows = `
+            <table width="100%" border="0" cellspacing="0" cellpadding="0" style="border-bottom:2px solid #222; margin-bottom:10px;">
+                <tr>
+                    <td style="padding:15px;"><div style="background:#cc2222;color:white;width:150px;height:50px;text-align:center;line-height:50px;font-size:22px;font-weight:900;letter-spacing:3px;">REDMEN</div></td>
+                    <td align="right" style="padding:15px; font-size:11px; line-height:1.4; color:#555;">
+                        <b>Labrobin Pty Ltd</b><br>T/A Redmen Fire Protection<br>ABN 72 079 715 867<br>Phone: 1300 733 836<br>Email: info@redmen.com.au
+                    </td>
+                </tr>
+            </table>
+            <div style="text-align:center; padding:15px;">
+                <h1 style="font-size:18px; margin:0; text-transform:uppercase; letter-spacing:1px;">Fire Protection Outstanding Works Status</h1>
+                <div style="font-size:13px; color:#666;">Call Sheet - FPOWS</div>
+            </div>
+            
+            <table width="100%" border="0" cellspacing="0" cellpadding="0" style="border:1px solid #ddd; margin-bottom:20px; font-size:12px;">
+                <tr style="border-bottom:1px solid #ddd;">
+                    <td width="33%" style="padding:10px; border-right:1px solid #ddd; border-bottom:1px solid #ddd;">
+                        <div style="font-size:9px; color:#888; text-transform:uppercase;">Date Form Completed</div>
+                        <div style="font-weight:700;">Pending</div>
+                    </td>
+                    <td width="33%" style="padding:10px; border-right:1px solid #ddd; border-bottom:1px solid #ddd;">
+                        <div style="font-size:9px; color:#888; text-transform:uppercase;">Client</div>
+                        <div style="font-weight:700;">${data.Client || '—'}</div>
+                    </td>
+                    <td width="34%" style="padding:10px; border-bottom:1px solid #ddd;">
+                        <div style="font-size:9px; color:#888; text-transform:uppercase;">Site</div>
+                        <div style="font-weight:700;">${data.Site || '—'}</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:10px; border-right:1px solid #ddd; border-bottom:1px solid #ddd;">
+                        <div style="font-size:9px; color:#888; text-transform:uppercase;">Date Call Made</div>
+                        <div style="font-weight:700;">Not Issued</div>
+                    </td>
+                    <td style="padding:10px; border-right:1px solid #ddd; border-bottom:1px solid #ddd;">
+                        <div style="font-size:9px; color:#888; text-transform:uppercase;">Site Contact</div>
+                        <div style="font-weight:700;">${data.SiteContact?.Name || '—'}</div>
+                    </td>
+                    <td style="padding:10px; border-bottom:1px solid #ddd;">
+                        <div style="font-size:9px; color:#888; text-transform:uppercase;">Phone # / Email</div>
+                        <div style="font-weight:700;">${data.SiteContact?.Phone || '—'} / ${data.SiteContact?.Email || '—'}</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:10px; border-right:1px solid #ddd;">
+                        <div style="font-size:9px; color:#888; text-transform:uppercase;">Service Due</div>
+                        <div style="font-weight:700;">${data.ServiceDue?.Type || '—'}</div>
+                    </td>
+                    <td style="padding:10px; border-right:1px solid #ddd;">
+                        <div style="font-size:9px; color:#888; text-transform:uppercase;">Month / Year</div>
+                        <div style="font-weight:700;">${data.ServiceDue?.Month || '—'} / ${data.ServiceDue?.Year || '—'}</div>
+                    </td>
+                    <td style="padding:10px;">
+                        <div style="font-size:9px; color:#888; text-transform:uppercase;">Form # (Job ID)</div>
+                        <div style="font-weight:700;">${jobId}</div>
+                    </td>
+                </tr>
+            </table>
+        `;
+
+        // Generate Works Table HTML
+        let worksRows = "";
+        const works = Array.isArray(data.OutstandingWorks) ? data.OutstandingWorks : [];
+        
+        works.forEach(item => {
+            worksRows += `
+                <tr>
+                    <td style="padding:8px; border:1px solid #ddd; font-size:11px;">${item.Date || '—'}</td>
+                    <td style="padding:8px; border:1px solid #ddd; font-size:11px;">${item.EquipmentType || '—'}</td>
+                    <td style="padding:8px; border:1px solid #ddd; font-size:11px;">${item.Issue || '—'}</td>
+                    <td style="padding:8px; border:1px solid #ddd; font-size:11px;">${item.Lead || '—'}</td>
+                    <td style="padding:8px; border:1px solid #ddd; font-size:11px;">${item.DARN || '—'}</td>
+                    <td style="padding:8px; border:1px solid #ddd; font-size:11px;">${item.Quote || '—'}</td>
+                    <td style="padding:8px; border:1px solid #ddd; font-size:11px;">${item.Job || '—'}</td>
+                </tr>
+            `;
+        });
+
+        const worksTableHead = `
+            <table width="100%" border="0" cellspacing="0" cellpadding="0" style="border-collapse:collapse; margin-bottom:30px;">
+                <thead>
+                    <tr style="background:#2c2c2c; color:white; font-size:10px; text-transform:uppercase;">
+                        <th width="10%" style="padding:8px; text-align:left;">Date</th>
+                        <th width="12%" style="padding:8px; text-align:left;">Equipment</th>
+                        <th width="35%" style="padding:8px; text-align:left;">Issue</th>
+                        <th width="8%" style="padding:8px; text-align:left;">Lead #</th>
+                        <th width="8%" style="padding:8px; text-align:left;">DARN #</th>
+                        <th width="8%" style="padding:8px; text-align:left;">Quote #</th>
+                        <th width="8%" style="padding:8px; text-align:left;">Job #</th>
+                    </tr>
+                </thead>
+                <tbody>${worksRows || '<tr><td colspan="7" style="padding:20px; text-align:center; color:#888;">No outstanding works found.</td></tr>'}</tbody>
+            </table>
+        `;
+
+        const emailHtml = `
+            <html>
+            <body style="font-family: Arial, sans-serif; background-color:#f6f6f6; padding:20px; margin:0;">
+                <div style="max-width:800px; margin:0 auto; background:white; padding:30px; border-radius:8px; box-shadow:0 3px 10px rgba(0,0,0,0.1);">
+                    <p style="font-size:12px; color:#888; margin-bottom:20px; text-align:center;">This FPOWS Call Sheet was automatically generated by REDMEN Fire Protection Automation.</p>
+                    ${metadataRows}
+                    ${worksTableHead}
+                    <div style="text-align:center; font-size:11px; color:#aaa; border-top:1px solid #eee; padding-top:20px;">
+                        Sent via FPOWS Automation · REDMEN Fire Protection · 1300 733 836
+                    </div>
+                </div>
+            </body></html>
+        `;
+
+        try {
+            const res = await fetch('/api/send-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    jobId: jobId,
+                    clientName: data.Client || '',
+                    recipientEmail: recipientEmail,
+                    managerEmail: "", 
+                    subject: `FPOWS Call Sheet - Job #${jobId} - ${data.Client || 'Unknown Client'}`,
+                    htmlContent: emailHtml
+                })
+            });
+            const result = await res.json();
+            if (result.success) {
+                // Flash success, then back to done
+                $('status-pill').className = 'status-pill pill-done';
+                $('status-pill').textContent = `✅ Email sent! Job #${jobId} loaded`;
+                setTimeout(() => {
+                    $('status-pill').textContent = `✅ Job #${jobId} loaded and sent`;
+                }, 3000);
+            } else {
+                throw new Error(result.error);
+            }
+        } catch (err) {
+            console.error("Auto Email Failed:", err);
+            showError("Failed to auto-send email: " + err.message);
+            $('status-pill').className = 'status-pill pill-error';
+            $('status-pill').textContent = `❌ Email Failed for #${jobId}`;
+        }
+    }
 
     /* --- Chatbot Logic --- */
     class FPOWSChatbot {
