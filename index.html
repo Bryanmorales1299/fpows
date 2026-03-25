@@ -913,7 +913,15 @@
             // Read metadata from labels
             const site = $('f-site').textContent.trim();
             const contact = $('f-contact').textContent.trim();
-            const phoneEmail = $('f-phone').textContent.trim() + ' / ' + $('f-email').textContent.trim();
+            const p = $('f-phone').textContent.trim();
+            const e = $('f-email').textContent.trim();
+            const phoneText = (p && p !== '—') ? p : '';
+            const emailText = (e && e !== '—') ? e : '';
+            let phoneEmail = '—';
+            if (phoneText && emailText) phoneEmail = `${phoneText} / ${emailText}`;
+            else if (phoneText) phoneEmail = phoneText;
+            else if (emailText) phoneEmail = emailText;
+
             const serviceType = $('f-6mo').textContent.trim();
             const serviceMonthYear = $('f-6mo-month').textContent.trim() + ' / ' + $('f-6mo-year').textContent.trim();
             const afss = $('f-afss').textContent.trim();
