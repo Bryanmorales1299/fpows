@@ -14,22 +14,21 @@
         .control-bar {
             position: sticky; top: 0; z-index: 100;
             background: var(--dark);
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 14px 28px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 16px 28px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-            gap: 20px; flex-wrap: wrap;
+            gap: 16px;
         }
         .control-bar .brand { 
-            color: #fff; font-size: 1rem; font-weight: 700; white-space: nowrap;
-            letter-spacing: 0.5px;
+            color: #fff; font-size: 1.1rem; font-weight: 700; white-space: nowrap;
+            letter-spacing: 0.5px; text-align: center;
             flex-shrink: 0;
         }
         .control-bar .brand span { color: var(--accent); opacity: 0.9; }
 
         .search-row { 
-            display: flex; align-items: center; gap: 12px; 
-            flex: 1; justify-content: flex-end;
-            max-width: 800px; flex-wrap: wrap;
+            display: flex; flex-direction: column; align-items: center; gap: 14px; 
+            width: 100%; justify-content: center;
         }
         .search-row input, .search-row select {
             padding: 10px 16px; border-radius: 8px; border: 1px solid #3d3d5c;
@@ -387,14 +386,14 @@
 <div class="control-bar">
     <div class="brand">REDMEN Fire Protection · <span>simPRO → FPOWS</span></div>
     <div class="search-row">
-        <div style="display:flex; gap:12px; align-items:center; justify-content:flex-end; flex-wrap:wrap;">
-            <select id="schedule-select">
+        <div style="display:flex; gap:12px; align-items:center; justify-content:center; flex-wrap:wrap; width: 100%;">
+            <select id="schedule-select" style="max-width: 300px;">
                 <option value="">Fetching today's jobs...</option>
             </select>
-            <input type="number" id="job-id-input" placeholder="Enter simPRO Job ID…" min="1">
+            <input type="number" id="job-id-input" placeholder="Enter simPRO Job ID…" min="1" style="max-width: 200px;">
             <button class="btn" id="btn-fetch">🔍 Fetch Job</button>
         </div>
-        <div style="display:flex; gap:12px; align-items:center; justify-content:flex-end; flex-wrap:wrap;">
+        <div style="display:flex; gap:12px; align-items:center; justify-content:center; flex-wrap:wrap; width: 100%;">
             <button class="btn btn-outline" id="btn-publish" style="display:none">Save and Sent to Email</button>
             <button class="btn btn-outline" id="btn-history">📋 History</button>
             <button class="btn btn-outline" id="btn-print" style="display:none">🖨 Print</button>
