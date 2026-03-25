@@ -22,6 +22,7 @@
         .control-bar .brand { 
             color: #fff; font-size: 1rem; font-weight: 700; white-space: nowrap;
             letter-spacing: 0.5px;
+            flex-shrink: 0;
         }
         .control-bar .brand span { color: var(--accent); opacity: 0.9; }
 
@@ -386,14 +387,14 @@
 <div class="control-bar">
     <div class="brand">REDMEN Fire Protection · <span>simPRO → FPOWS</span></div>
     <div class="search-row">
-        <div style="display:flex; gap:12px; align-items:center; justify-content:flex-end;">
+        <div style="display:flex; gap:12px; align-items:center; justify-content:flex-end; flex-wrap:wrap;">
             <select id="schedule-select">
                 <option value="">Fetching today's jobs...</option>
             </select>
             <input type="number" id="job-id-input" placeholder="Enter simPRO Job ID…" min="1">
             <button class="btn" id="btn-fetch">🔍 Fetch Job</button>
         </div>
-        <div style="display:flex; gap:12px; align-items:center; justify-content:flex-end;">
+        <div style="display:flex; gap:12px; align-items:center; justify-content:flex-end; flex-wrap:wrap;">
             <button class="btn btn-outline" id="btn-publish" style="display:none">Save and Sent to Email</button>
             <button class="btn btn-outline" id="btn-history">📋 History</button>
             <button class="btn btn-outline" id="btn-print" style="display:none">🖨 Print</button>
