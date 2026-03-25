@@ -17,7 +17,7 @@
             display: flex; align-items: center; justify-content: space-between;
             padding: 14px 28px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-            gap: 20px;
+            gap: 20px; flex-wrap: wrap;
         }
         .control-bar .brand { 
             color: #fff; font-size: 1rem; font-weight: 700; white-space: nowrap;
@@ -28,7 +28,7 @@
         .search-row { 
             display: flex; align-items: center; gap: 12px; 
             flex: 1; justify-content: flex-end;
-            max-width: 800px;
+            max-width: 800px; flex-wrap: wrap;
         }
         .search-row input, .search-row select {
             padding: 10px 16px; border-radius: 8px; border: 1px solid #3d3d5c;
@@ -391,6 +391,7 @@
         </select>
         <input type="number" id="job-id-input" placeholder="Enter simPRO Job ID…" min="1">
         <button class="btn" id="btn-fetch">🔍 Fetch Job</button>
+        <button class="btn btn-outline" id="btn-publish" style="display:none">Save and Sent to Email</button>
         <button class="btn btn-outline" id="btn-history">📋 History</button>
         <button class="btn btn-outline" id="btn-print" style="display:none">🖨 Print</button>
     </div>
@@ -464,72 +465,75 @@
         <div class="meta-row" style="grid-template-columns:1fr 2fr 2fr;">
             <div class="meta-cell">
                 <div class="lbl">Date Form Completed</div>
-                <div class="val" id="f-date"><span class="placeholder-text">—</span></div>
+                <div class="val" id="f-date" contenteditable="true"><span class="placeholder-text">—</span></div>
             </div>
             <div class="meta-cell">
                 <div class="lbl">Client</div>
-                <div class="val" id="f-client"><span class="placeholder-text">—</span></div>
+                <div class="val" id="f-client" contenteditable="true"><span class="placeholder-text">—</span></div>
             </div>
             <div class="meta-cell">
                 <div class="lbl">Site</div>
-                <div class="val" id="f-site"><span class="placeholder-text">—</span></div>
+                <div class="val" id="f-site" contenteditable="true"><span class="placeholder-text">—</span></div>
             </div>
+
         </div>
 
         <!-- Row 2: Contact row -->
         <div class="meta-row" style="grid-template-columns:1fr 1fr 1fr 1.6fr 1fr 1fr;">
             <div class="meta-cell">
                 <div class="lbl">Date Call Made</div>
-                <div class="val" id="f-call-date"><span class="placeholder-text">—</span></div>
+                <div class="val" id="f-call-date" contenteditable="true"><span class="placeholder-text">—</span></div>
             </div>
             <div class="meta-cell">
                 <div class="lbl">Site Contact</div>
-                <div class="val" id="f-contact"><span class="placeholder-text">—</span></div>
+                <div class="val" id="f-contact" contenteditable="true"><span class="placeholder-text">—</span></div>
             </div>
             <div class="meta-cell">
                 <div class="lbl">Phone #</div>
-                <div class="val" id="f-phone"><span class="placeholder-text">—</span></div>
+                <div class="val" id="f-phone" contenteditable="true"><span class="placeholder-text">—</span></div>
             </div>
             <div class="meta-cell">
                 <div class="lbl">Email</div>
-                <div class="val" id="f-email" style="font-size:0.72rem"><span class="placeholder-text">—</span></div>
+                <div class="val" id="f-email" style="font-size:0.72rem" contenteditable="true"><span class="placeholder-text">—</span></div>
             </div>
             <div class="meta-cell">
                 <div class="lbl">AFSS Due</div>
-                <div class="val" id="f-afss"><span class="placeholder-text">—</span></div>
+                <div class="val" id="f-afss" contenteditable="true"><span class="placeholder-text">—</span></div>
             </div>
             <div class="meta-cell">
                 <div class="lbl">Form # (Job ID)</div>
-                <div class="val" id="f-jobid"><span class="placeholder-text">—</span></div>
+                <div class="val" id="f-jobid" contenteditable="true"><span class="placeholder-text">—</span></div>
             </div>
+
         </div>
 
         <!-- Row 3: Service dates -->
         <div class="meta-row" style="grid-template-columns:1fr 1fr 1fr 1fr 1fr 1fr; border-bottom:2px solid #ccc;">
             <div class="meta-cell">
                 <div class="lbl">6 Monthly Service Due</div>
-                <div class="val" id="f-6mo"><span class="placeholder-text">—</span></div>
+                <div class="val" id="f-6mo" contenteditable="true"><span class="placeholder-text">—</span></div>
             </div>
             <div class="meta-cell">
                 <div class="lbl">Month</div>
-                <div class="val" id="f-6mo-month"><span class="placeholder-text">—</span></div>
+                <div class="val" id="f-6mo-month" contenteditable="true"><span class="placeholder-text">—</span></div>
             </div>
             <div class="meta-cell">
                 <div class="lbl">Year</div>
-                <div class="val" id="f-6mo-year"><span class="placeholder-text">—</span></div>
+                <div class="val" id="f-6mo-year" contenteditable="true"><span class="placeholder-text">—</span></div>
             </div>
             <div class="meta-cell">
                 <div class="lbl">12 Monthly Service Due</div>
-                <div class="val" id="f-12mo"><span class="placeholder-text">—</span></div>
+                <div class="val" id="f-12mo" contenteditable="true"><span class="placeholder-text">—</span></div>
             </div>
             <div class="meta-cell">
                 <div class="lbl">Month</div>
-                <div class="val" id="f-12mo-month"><span class="placeholder-text">—</span></div>
+                <div class="val" id="f-12mo-month" contenteditable="true"><span class="placeholder-text">—</span></div>
             </div>
             <div class="meta-cell">
                 <div class="lbl">Year</div>
-                <div class="val" id="f-12mo-year"><span class="placeholder-text">—</span></div>
+                <div class="val" id="f-12mo-year" contenteditable="true"><span class="placeholder-text">—</span></div>
             </div>
+
         </div>
 
         <!-- Outstanding Works Table -->
@@ -572,10 +576,11 @@
                 </tr>
             </thead>
             <tbody>
-                <tr class="empty-row"><td colspan="6">&nbsp;</td></tr>
-                <tr class="empty-row"><td colspan="6">&nbsp;</td></tr>
-                <tr class="empty-row"><td colspan="6">&nbsp;</td></tr>
-                <tr class="empty-row"><td colspan="6">&nbsp;</td></tr>
+                <tr><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td></tr>
+                <tr><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td></tr>
+                <tr><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td></tr>
+                <tr><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td></tr>
+                <tr><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td></tr>
             </tbody>
         </table>
 
@@ -669,16 +674,16 @@
             works.forEach(w => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td style="font-size:0.7rem">${w.Date || ''}</td>
-                    <td>${w.EquipmentType || ''}</td>
-                    <td style="font-size:0.72rem; line-height:1.2">${w.Issue || ''}</td>
-                    <td>${w.Lead || ''}</td>
-                    <td>${w.DARN || ''}</td>
-                    <td>${w.Quote || ''}</td>
-                    <td>${w.Job || ''}</td>
-                    <td>${w.Responsibility || ''}</td>
-                    <td>${w.Comment || ''}</td>
-                    <td class="col-status">${badgeHtml(w.Status)}</td>`;
+                    <td contenteditable="true" style="font-size:0.7rem">${w.Date || ''}</td>
+                    <td contenteditable="true">${w.EquipmentType || ''}</td>
+                    <td contenteditable="true" style="font-size:0.72rem; line-height:1.2">${w.Issue || ''}</td>
+                    <td contenteditable="true">${w.Lead || ''}</td>
+                    <td contenteditable="true">${w.DARN || ''}</td>
+                    <td contenteditable="true">${w.Quote || ''}</td>
+                    <td contenteditable="true">${w.Job || ''}</td>
+                    <td contenteditable="true">${w.Responsibility || ''}</td>
+                    <td contenteditable="true">${w.Comment || ''}</td>
+                    <td contenteditable="true" class="col-status">${badgeHtml(w.Status)}</td>`;
                 tbody.appendChild(tr);
             });
         }
@@ -687,8 +692,17 @@
         const fill = Math.max(0, 8 - works.length);
         for (let i = 0; i < fill; i++) {
             const tr = document.createElement('tr');
-            tr.className = 'empty-row';
-            tr.innerHTML = '<td colspan="9">&nbsp;</td><td class="col-status">&nbsp;</td>';
+            tr.innerHTML = `
+                <td contenteditable="true"></td>
+                <td contenteditable="true"></td>
+                <td contenteditable="true"></td>
+                <td contenteditable="true"></td>
+                <td contenteditable="true"></td>
+                <td contenteditable="true"></td>
+                <td contenteditable="true"></td>
+                <td contenteditable="true"></td>
+                <td contenteditable="true"></td>
+                <td contenteditable="true"></td>`;
             tbody.appendChild(tr);
         }
 
@@ -785,9 +799,7 @@
             $('status-pill').className = 'status-pill pill-done';
             $('status-pill').textContent = `✅ Job #${jobId} loaded`;
             $('btn-fetch').textContent = '🔄 Reload';
-            
-            // Auto dispatch email
-            await autoSendEmail(data, jobId);
+            $('btn-publish').style.display = 'inline-flex';
         } catch (err) {
             showError(err.message);
             $('status-pill').className = 'status-pill pill-error';
@@ -873,164 +885,212 @@
         }
     });
 
+    // Global helper for chatbot speech
+    function speak(res, followUp, intent) {
+        if (window.__chatbot) {
+            window.__chatbot.handleSpeak(res, followUp, intent);
+        } else {
+            console.warn("Chatbot not initialized for speak:", res);
+        }
+    }
+
     $('btn-fetch').addEventListener('click', fetchJob);
     $('job-id-input').addEventListener('keydown', e => { if (e.key === 'Enter') fetchJob(); });
     $('btn-print').addEventListener('click', () => window.print());
+    $('btn-publish').addEventListener('click', publishJob);
 
-    // Automatic Email Sender
-    async function autoSendEmail(data, jobId) {
-        // Forced for Testing:
-        let recipientEmail = 'jonathangalicia1897@gmail.com'; 
-        // Original Logic (Site Contact Email): data.SiteContact?.Email || '';
-        
+    // Manual Email Publisher (Scrapes the current DOM state)
+    async function publishJob() {
+        const jobId = $('f-jobid').textContent.trim();
+        const clientName = $('f-client').textContent.trim();
+        if (!jobId || jobId === '—') { showError('No job loaded to save.'); return; }
+
         $('status-pill').className = 'status-pill pill-loading';
-        $('status-pill').textContent = '📤 Sending automatic email...';
+        $('status-pill').textContent = '📤 Saving & Sending...';
+        $('btn-publish').disabled = true;
 
-        // Build a robust, table-based Email HTML
-        const metadataRows = `
-            <table width="100%" border="0" cellspacing="0" cellpadding="0" style="border-bottom:2px solid #222; margin-bottom:10px;">
-                <tr>
-                    <td style="padding:15px;"><div style="background:#cc2222;color:white;width:150px;height:50px;text-align:center;line-height:50px;font-size:22px;font-weight:900;letter-spacing:3px;">REDMEN</div></td>
-                    <td align="right" style="padding:15px; font-size:11px; line-height:1.4; color:#555;">
-                        <b>Labrobin Pty Ltd</b><br>T/A Redmen Fire Protection<br>ABN 72 079 715 867<br>Phone: 1300 733 836<br>Email: info@redmen.com.au
-                    </td>
-                </tr>
-            </table>
-            <div style="text-align:center; padding:15px;">
-                <h1 style="font-size:18px; margin:0; text-transform:uppercase; letter-spacing:1px;">Fire Protection Outstanding Works Status</h1>
-                <div style="font-size:13px; color:#666;">Call Sheet - FPOWS</div>
-            </div>
-            
-            <table width="100%" border="0" cellspacing="0" cellpadding="0" style="border:1px solid #ddd; margin-bottom:20px; font-size:12px;">
-                <tr style="border-bottom:1px solid #ddd;">
-                    <td width="33%" style="padding:10px; border-right:1px solid #ddd; border-bottom:1px solid #ddd;">
-                        <div style="font-size:9px; color:#888; text-transform:uppercase;">Date Form Completed</div>
-                        <div style="font-weight:700;">Pending</div>
-                    </td>
-                    <td width="33%" style="padding:10px; border-right:1px solid #ddd; border-bottom:1px solid #ddd;">
-                        <div style="font-size:9px; color:#888; text-transform:uppercase;">Client</div>
-                        <div style="font-weight:700;">${data.Client || '—'}</div>
-                    </td>
-                    <td width="34%" style="padding:10px; border-bottom:1px solid #ddd;">
-                        <div style="font-size:9px; color:#888; text-transform:uppercase;">Site</div>
-                        <div style="font-weight:700;">${data.Site || '—'}</div>
-                    </td>
-                </tr>
-                <tr>
-                    <td style="padding:10px; border-right:1px solid #ddd; border-bottom:1px solid #ddd;">
-                        <div style="font-size:9px; color:#888; text-transform:uppercase;">Date Call Made</div>
-                        <div style="font-weight:700;">Not Issued</div>
-                    </td>
-                    <td style="padding:10px; border-right:1px solid #ddd; border-bottom:1px solid #ddd;">
-                        <div style="font-size:9px; color:#888; text-transform:uppercase;">Site Contact</div>
-                        <div style="font-weight:700;">${data.SiteContact?.Name || '—'}</div>
-                    </td>
-                    <td style="padding:10px; border-bottom:1px solid #ddd;">
-                        <div style="font-size:9px; color:#888; text-transform:uppercase;">Phone # / Email</div>
-                        <div style="font-weight:700;">${data.SiteContact?.Phone || '—'} / ${data.SiteContact?.Email || '—'}</div>
-                    </td>
-                </tr>
-                <tr>
-                    <td style="padding:10px; border-right:1px solid #ddd;">
-                        <div style="font-size:9px; color:#888; text-transform:uppercase;">Service Due</div>
-                        <div style="font-weight:700;">${data.ServiceDue?.Type || '—'}</div>
-                    </td>
-                    <td style="padding:10px; border-right:1px solid #ddd;">
-                        <div style="font-size:9px; color:#888; text-transform:uppercase;">Month / Year</div>
-                        <div style="font-weight:700;">${data.ServiceDue?.Month || '—'} / ${data.ServiceDue?.Year || '—'}</div>
-                    </td>
-                    <td style="padding:10px;">
-                        <div style="font-size:9px; color:#888; text-transform:uppercase;">Form # (Job ID)</div>
-                        <div style="font-weight:700;">${jobId}</div>
-                    </td>
-                </tr>
-            </table>
-        `;
+        try {
+            // Read metadata from labels
+            const site = $('f-site').textContent.trim();
+            const contact = $('f-contact').textContent.trim();
+            const phoneEmail = $('f-phone').textContent.trim() + ' / ' + $('f-email').textContent.trim();
+            const serviceType = $('f-6mo').textContent.trim();
+            const serviceMonthYear = $('f-6mo-month').textContent.trim() + ' / ' + $('f-6mo-year').textContent.trim();
+            const afss = $('f-afss').textContent.trim();
 
-        // Generate Works Table HTML
-        let worksRows = "";
-        const works = Array.isArray(data.OutstandingWorks) ? data.OutstandingWorks : [];
-        
-        works.forEach(item => {
-            worksRows += `
-                <tr>
-                    <td style="padding:8px; border:1px solid #ddd; font-size:11px;">${item.Date || '—'}</td>
-                    <td style="padding:8px; border:1px solid #ddd; font-size:11px;">${item.EquipmentType || '—'}</td>
-                    <td style="padding:8px; border:1px solid #ddd; font-size:11px;">${item.Issue || '—'}</td>
-                    <td style="padding:8px; border:1px solid #ddd; font-size:11px;">${item.Lead || '—'}</td>
-                    <td style="padding:8px; border:1px solid #ddd; font-size:11px;">${item.DARN || '—'}</td>
-                    <td style="padding:8px; border:1px solid #ddd; font-size:11px;">${item.Quote || '—'}</td>
-                    <td style="padding:8px; border:1px solid #ddd; font-size:11px;">${item.Job || '—'}</td>
-                </tr>
-            `;
-        });
-
-        const worksTableHead = `
-            <table width="100%" border="0" cellspacing="0" cellpadding="0" style="border-collapse:collapse; margin-bottom:30px;">
-                <thead>
-                    <tr style="background:#2c2c2c; color:white; font-size:10px; text-transform:uppercase;">
-                        <th width="10%" style="padding:8px; text-align:left;">Date</th>
-                        <th width="12%" style="padding:8px; text-align:left;">Equipment</th>
-                        <th width="35%" style="padding:8px; text-align:left;">Issue</th>
-                        <th width="8%" style="padding:8px; text-align:left;">Lead #</th>
-                        <th width="8%" style="padding:8px; text-align:left;">DARN #</th>
-                        <th width="8%" style="padding:8px; text-align:left;">Quote #</th>
-                        <th width="8%" style="padding:8px; text-align:left;">Job #</th>
+            const headerHtml = `
+                <table width="100%" border="0" cellspacing="0" cellpadding="0" style="border-bottom:2px solid #222; margin-bottom:10px;">
+                    <tr>
+                        <td style="padding:15px;"><div style="background:#cc2222;color:white;width:150px;height:50px;text-align:center;line-height:50px;font-size:22px;font-weight:900;letter-spacing:3px;">REDMEN</div></td>
+                        <td align="right" style="padding:15px; font-size:11px; line-height:1.4; color:#555;">
+                            <b>Labrobin Pty Ltd</b><br>T/A Redmen Fire Protection<br>ABN 72 079 715 867<br>Phone: 1300 733 836<br>Email: info@redmen.com.au
+                        </td>
                     </tr>
-                </thead>
-                <tbody>${worksRows || '<tr><td colspan="7" style="padding:20px; text-align:center; color:#888;">No outstanding works found.</td></tr>'}</tbody>
-            </table>
-        `;
+                </table>
+                <div style="text-align:center; padding:15px;">
+                    <h1 style="font-size:18px; margin:0; text-transform:uppercase; letter-spacing:1px;">Fire Protection Outstanding Works Status</h1>
+                    <div style="font-size:13px; color:#666;">Call Sheet - FPOWS</div>
+                </div>
+                <table width="100%" border="0" cellspacing="0" cellpadding="0" style="border:1px solid #ddd; margin-bottom:20px; font-size:12px;">
+                    <tr>
+                        <td width="33%" style="padding:10px; border-right:1px solid #ddd; border-bottom:1px solid #ddd;">
+                            <div style="font-size:9px; color:#888; text-transform:uppercase;">Date Form Completed</div>
+                            <div style="font-weight:700;">${$('f-date').textContent.trim()}</div>
+                        </td>
+                        <td width="33%" style="padding:10px; border-right:1px solid #ddd; border-bottom:1px solid #ddd;">
+                            <div style="font-size:9px; color:#888; text-transform:uppercase;">Client</div>
+                            <div style="font-weight:700;">${clientName}</div>
+                        </td>
+                        <td width="34%" style="padding:10px; border-bottom:1px solid #ddd;">
+                            <div style="font-size:9px; color:#888; text-transform:uppercase;">Site</div>
+                            <div style="font-weight:700;">${site}</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:10px; border-right:1px solid #ddd; border-bottom:1px solid #ddd;">
+                            <div style="font-size:9px; color:#888; text-transform:uppercase;">Date Call Made</div>
+                            <div style="font-weight:700;">${$('f-call-date').textContent.trim()}</div>
+                        </td>
+                        <td style="padding:10px; border-right:1px solid #ddd; border-bottom:1px solid #ddd;">
+                            <div style="font-size:9px; color:#888; text-transform:uppercase;">Site Contact</div>
+                            <div style="font-weight:700;">${contact}</div>
+                        </td>
+                        <td style="padding:10px; border-bottom:1px solid #ddd;">
+                            <div style="font-size:9px; color:#888; text-transform:uppercase;">Phone # / Email</div>
+                            <div style="font-weight:700;">${phoneEmail}</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:10px; border-right:1px solid #ddd;">
+                            <div style="font-size:9px; color:#888; text-transform:uppercase;">Service Due</div>
+                            <div style="font-weight:700;">${serviceType}</div>
+                        </td>
+                        <td style="padding:10px; border-right:1px solid #ddd;">
+                            <div style="font-size:9px; color:#888; text-transform:uppercase;">Month / Year</div>
+                            <div style="font-weight:700;">${serviceMonthYear}</div>
+                        </td>
+                        <td style="padding:10px;">
+                            <div style="font-size:9px; color:#888; text-transform:uppercase;">Form # (Job ID)</div>
+                            <div style="font-weight:700;">${jobId}</div>
+                        </td>
+                    </tr>
+                </table>
+            `;
 
-        const emailHtml = `
-            <html>
-            <body style="font-family: Arial, sans-serif; background-color:#f6f6f6; padding:20px; margin:0;">
-                <div style="max-width:800px; margin:0 auto; background:white; padding:30px; border-radius:8px; box-shadow:0 3px 10px rgba(0,0,0,0.1);">
-                    <p style="font-size:12px; color:#888; margin-bottom:20px; text-align:center;">This FPOWS Call Sheet was automatically generated by REDMEN Fire Protection Automation.</p>
-                    ${metadataRows}
-                    ${worksTableHead}
+            // Scrape Outstanding Works
+            let worksHtml = "";
+            const worksRows = Array.from($('f-works-body').rows);
+            worksRows.forEach(row => {
+                const cells = Array.from(row.cells);
+                if (cells.length < 10) return;
+                const hasText = cells.some(c => c.textContent.trim() !== "");
+                if (!hasText) return;
+
+                worksHtml += `<tr>`;
+                [0,1,2,3,4,5,6].forEach(idx => {
+                    worksHtml += `<td style="padding:8px; border:1px solid #ddd; font-size:11px;">${cells[idx].textContent.trim() || '—'}</td>`;
+                });
+                worksHtml += `</tr>`;
+            });
+
+            // Scrape Recommendations
+            let recsHtml = "";
+            const recRows = Array.from($('rec-table').querySelector('tbody').rows);
+            recRows.forEach(row => {
+                const cells = Array.from(row.cells);
+                if (cells.length < 6) return;
+                const hasText = cells.some(c => c.textContent.trim() !== "");
+                if (!hasText) return;
+
+                recsHtml += `<tr>`;
+                [0,1,2,3,4,5].forEach(idx => {
+                    recsHtml += `<td style="padding:8px; border:1px solid #ddd; font-size:11px;">${cells[idx].textContent.trim() || '—'}</td>`;
+                });
+                recsHtml += `</tr>`;
+            });
+
+            const emailHtml = `
+                <html><body style="font-family: Arial, sans-serif; background-color:#f6f6f6; padding:20px; margin:0;">
+                <div style="max-width:850px; margin:0 auto; background:white; padding:30px; border-radius:8px; box-shadow:0 3px 10px rgba(0,0,0,0.1);">
+                    <p style="font-size:11px; color:#888; text-align:center; margin-bottom:20px;">This FPOWS Call Sheet was generated and approved via REDMEN Automation.</p>
+                    ${headerHtml}
+                    <h3 style="font-size:14px; margin:20px 0 10px; text-transform:uppercase;">Outstanding Works</h3>
+                    <table width="100%" style="border-collapse:collapse; margin-bottom:25px;">
+                        <thead>
+                            <tr style="background:#2c2c2c; color:white; font-size:10px; text-transform:uppercase;">
+                                <th style="padding:8px; border:1px solid #333; text-align:left;">Date</th>
+                                <th style="padding:8px; border:1px solid #333; text-align:left;">Equipment</th>
+                                <th style="padding:8px; border:1px solid #333; text-align:left;">Issue</th>
+                                <th style="padding:8px; border:1px solid #333; text-align:left;">Lead #</th>
+                                <th style="padding:8px; border:1px solid #333; text-align:left;">DARN #</th>
+                                <th style="padding:8px; border:1px solid #333; text-align:left;">Quote #</th>
+                                <th style="padding:8px; border:1px solid #333; text-align:left;">Job #</th>
+                            </tr>
+                        </thead>
+                        <tbody>${worksHtml || '<tr><td colspan="7" style="padding:20px; text-align:center; color:#999;">No works listed.</td></tr>'}</tbody>
+                    </table>
+                    
+                    <h3 style="font-size:14px; margin:20px 0 10px; text-transform:uppercase;">Recommendations Made to Client</h3>
+                    <table width="100%" style="border-collapse:collapse; margin-bottom:25px;">
+                        <thead>
+                            <tr style="background:#2c2c2c; color:white; font-size:10px; text-transform:uppercase;">
+                                <th style="padding:8px; border:1px solid #333; text-align:left;">Date</th>
+                                <th style="padding:8px; border:1px solid #333; text-align:left;">Equipment Type</th>
+                                <th style="padding:8px; border:1px solid #333; text-align:left;">Issue</th>
+                                <th style="padding:8px; border:1px solid #333; text-align:left;">Responsibility</th>
+                                <th style="padding:8px; border:1px solid #333; text-align:left;">Comment</th>
+                                <th style="padding:8px; border:1px solid #333; text-align:left;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>${recsHtml || '<tr><td colspan="6" style="padding:20px; text-align:center; color:#999;">No recommendations listed.</td></tr>'}</tbody>
+                    </table>
+
                     <div style="text-align:center; font-size:11px; color:#aaa; border-top:1px solid #eee; padding-top:20px;">
                         Sent via FPOWS Automation · REDMEN Fire Protection · 1300 733 836
                     </div>
                 </div>
-            </body></html>
-        `;
+                </body></html>
+            `;
 
-        try {
+            const recipientEmail = $('f-email').textContent.includes('@') ? $('f-email').textContent.trim() : 'jonathangalicia1897@gmail.com';
+
             const res = await fetch('/api/send-email', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     jobId: jobId,
-                    clientName: data.Client || '',
+                    clientName: clientName,
                     recipientEmail: recipientEmail,
-                    managerEmail: "", 
-                    subject: `FPOWS Call Sheet - Job #${jobId} - ${data.Client || 'Unknown Client'}`,
+                    managerEmail: "",
+                    subject: `FPOWS Call Sheet - Job #${jobId} - ${clientName}`,
                     htmlContent: emailHtml
                 })
             });
+            
             const result = await res.json();
             if (result.success) {
-                // Flash success, then back to done
                 $('status-pill').className = 'status-pill pill-done';
-                $('status-pill').textContent = `✅ Email sent! Job #${jobId} loaded`;
-                setTimeout(() => {
-                    $('status-pill').textContent = `✅ Job #${jobId} loaded and sent`;
-                }, 3000);
+                $('status-pill').textContent = `✅ Job #${jobId} Saved & Sent!`;
+                speak(`Mission accomplished! Job #${jobId} has been saved and emailed to ${recipientEmail} and the manager.`, "Done! What's our next target?", "done");
+                
+                // Add to history list UI immediately
+                initSchedules();
             } else {
                 throw new Error(result.error);
             }
         } catch (err) {
-            console.error("Auto Email Failed:", err);
-            showError("Failed to auto-send email: " + err.message);
+            showError("Save and Sent failed: " + err.message);
             $('status-pill').className = 'status-pill pill-error';
-            $('status-pill').textContent = `❌ Email Failed for #${jobId}`;
+            $('status-pill').textContent = `❌ Sending Error`;
+        } finally {
+            $('btn-publish').disabled = false;
         }
     }
 
     /* --- Chatbot Logic --- */
     class FPOWSChatbot {
         constructor() {
+            window.__chatbot = this; 
             this.trigger = $('chat-trigger');
             this.window = $('chat-window');
             this.close = $('chat-close');
@@ -1309,6 +1369,12 @@
         initSchedules();
         new FPOWSChatbot();
     });
+
+    // Add handleSpeak to the class
+    FPOWSChatbot.prototype.handleSpeak = function(res, followUp, intent) {
+        this.context.lastIntent = intent;
+        this.addMessage(`${res} <br><br><em>${followUp}</em>`, 'bot');
+    };
 </script>
 </body>
 </html>
