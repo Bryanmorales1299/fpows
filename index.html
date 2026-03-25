@@ -387,14 +387,18 @@
 <div class="control-bar">
     <div class="brand">REDMEN Fire Protection · <span>simPRO → FPOWS</span></div>
     <div class="search-row">
-        <select id="schedule-select">
-            <option value="">Fetching today's jobs...</option>
-        </select>
-        <input type="number" id="job-id-input" placeholder="Enter simPRO Job ID…" min="1">
-        <button class="btn" id="btn-fetch">🔍 Reload</button>
-        <button class="btn btn-outline" id="btn-publish" style="display:none">Save and Sent to Email</button>
-        <button class="btn btn-outline" id="btn-history">📋 History</button>
-        <button class="btn btn-outline" id="btn-print" style="display:none">🖨 Print</button>
+        <div style="display:flex; gap:12px; align-items:center; justify-content:flex-end; flex-wrap:wrap;">
+            <select id="schedule-select">
+                <option value="">Fetching today's jobs...</option>
+            </select>
+            <input type="number" id="job-id-input" placeholder="Enter simPRO Job ID…" min="1">
+            <button class="btn" id="btn-fetch">🔍 Reload</button>
+        </div>
+        <div style="display:flex; gap:12px; align-items:center; justify-content:flex-end; flex-wrap:wrap;">
+            <button class="btn btn-outline" id="btn-publish" style="display:none">Save and Sent to Email</button>
+            <button class="btn btn-outline" id="btn-history">📋 History</button>
+            <button class="btn btn-outline" id="btn-print" style="display:none">🖨 Print</button>
+        </div>
     </div>
     <div id="status-pill" class="status-pill pill-waiting">⏳ Select or Enter Job</div>
 </div>
