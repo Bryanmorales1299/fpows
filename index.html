@@ -674,16 +674,16 @@
             works.forEach(w => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td contenteditable="true" style="font-size:0.7rem">${w.Date || ''}</td>
-                    <td contenteditable="true">${w.EquipmentType || ''}</td>
-                    <td contenteditable="true" style="font-size:0.72rem; line-height:1.2">${w.Issue || ''}</td>
-                    <td contenteditable="true">${w.Lead || ''}</td>
-                    <td contenteditable="true">${w.DARN || ''}</td>
-                    <td contenteditable="true">${w.Quote || ''}</td>
-                    <td contenteditable="true">${w.Job || ''}</td>
-                    <td contenteditable="true">${w.Responsibility || ''}</td>
-                    <td contenteditable="true">${w.Comment || ''}</td>
-                    <td contenteditable="true" class="col-status">${badgeHtml(w.Status)}</td>`;
+                    <td style="font-size:0.7rem">${w.Date || ''}</td>
+                    <td>${w.EquipmentType || ''}</td>
+                    <td style="font-size:0.72rem; line-height:1.2">${w.Issue || ''}</td>
+                    <td>${w.Lead || ''}</td>
+                    <td>${w.DARN || ''}</td>
+                    <td>${w.Quote || ''}</td>
+                    <td>${w.Job || ''}</td>
+                    <td>${w.Responsibility || ''}</td>
+                    <td>${w.Comment || ''}</td>
+                    <td class="col-status">${badgeHtml(w.Status)}</td>`;
                 tbody.appendChild(tr);
             });
         }
