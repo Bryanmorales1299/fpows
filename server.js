@@ -400,7 +400,8 @@ hApp.post('/api/send-email', async (req, res) => {
             type: "EMAIL_SUCCESS",
             jobId,
             client: clientName || "Unknown Client",
-            to: recipients,
+            clientEmail: recipientEmail || "—",
+            managerEmail: (managerEmail && managerEmail.trim()) || MANAGER_EMAIL || "—",
             subject: mailOptions.subject
         };
         
