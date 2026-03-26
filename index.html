@@ -419,8 +419,8 @@
                     <tr>
                         <th style="width: 25%">Timestamp</th>
                         <th style="width: 15%">Job ID</th>
-                        <th style="width: 30%">Client</th>
-                        <th style="width: 30%">Recipients</th>
+                        <th style="width: 20%">Client</th>
+                        <th style="width: 40%">Recipients</th>
                     </tr>
                 </thead>
                 <tbody id="history-list-body">
@@ -894,8 +894,9 @@
                         <td style="font-family:monospace">${ts}</td>
                         <td style="font-weight:700">#${log.jobId || 'N/A'}</td>
                         <td style="color:#e63946">${log.client || '—'}</td>
-                        <td title="${log.to || ''}" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px;">
-                            ${log.to || '—'}
+                        <td style="font-size: 0.72rem; line-height: 1.4; color: #444; padding:10px;">
+                            <div style="margin-bottom: 4px;"><strong>Client:</strong> ${log.clientEmail || log.to || '—'}</div>
+                            <div><strong>Manager:</strong> ${log.managerEmail || '—'}</div>
                         </td>
                     `;
                     tbody.appendChild(tr);
