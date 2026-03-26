@@ -38,9 +38,10 @@ if (!SIMPRO_BASE_URL || !SIMPRO_ACCESS_TOKEN) {
 const getSimpro = async (path) => {
     if (!SIMPRO_BASE_URL) throw new Error("SIMPRO_BASE_URL not configured");
     const rawUrl = `${SIMPRO_BASE_URL.replace(/\/$/, '')}${path.startsWith('/') ? '' : '/'}${path}`;
+    console.log(`[simPRO FETCH] URL: ${rawUrl}`);
     try {
         const validatedUrl = new URL(rawUrl).toString();
-        return axios.get(validatedUrl, {
+        const response = await axios.get(validatedUrl, {
             headers: {
                 'Authorization': `Bearer ${SIMPRO_ACCESS_TOKEN}`,
                 'Content-Type': 'application/json',
@@ -48,8 +49,11 @@ const getSimpro = async (path) => {
             },
             timeout: 15000 
         });
+        console.log(`[simPRO SUCCESS] ${path} -> ${response.status}`);
+        return response;
     } catch (urlErr) {
-        throw new Error(`Invalid URL: ${rawUrl}`);
+        console.error(`[simPRO ERROR] ${path} -> ${urlErr.message}`);
+        throw urlErr;
     }
 };
 
@@ -315,7 +319,7 @@ mcp.addTool({
 
 // Express App for UI and legacy API
 const hApp = express();
-hApp.use(express.json());
+hApp.use(express.json({ limit: '10mb' }));
 hApp.use(express.static(__dirname));
 
 // Serve index.html
@@ -344,6 +348,7 @@ hApp.get('/api/job/:id', async (req, res) => {
 
 // Schedules endpoint
 hApp.get('/api/schedules/today', async (req, res) => {
+    console.log(`[GET] /api/schedules/today`);
     try {
         const jobsRes = await getSimpro(`/api/v1.0/companies/${COMPANY_ID}/jobs/?pageSize=50&columns=ID,Name,Customer,DateIssued`);
         const schedules = jobsRes.data.map(job => ({
@@ -360,8 +365,10 @@ hApp.get('/api/schedules/today', async (req, res) => {
 
 // Email endpoint
 hApp.post('/api/send-email', async (req, res) => {
+    console.log('[POST] /api/send-email - received request');
     try {
         const { jobId, recipientEmail, managerEmail, htmlContent, subject, clientName } = req.body;
+        console.log(`[EMAIL] Job #${jobId} -> ${recipientEmail}, Manager: ${managerEmail}`);
 
         if (!SMTP_USER || !SMTP_PASS) {
             return res.status(500).json({ error: 'Email not configured. Set SMTP_USER and SMTP_PASS in environment.' });
@@ -436,6 +443,33 @@ hApp.get('/api/logs', (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
+// Delete history endpoint
+hApp.post('/api/delete-history', (req, res) => {
+    try {
+        const { timestamp } = req.body;
+        if (!timestamp) return res.status(400).json({ error: 'Timestamp is required' });
+
+        const historyPath = path.join(__dirname, 'email_history.jsonl');
+        if (!fs.existsSync(historyPath)) return res.json({ success: true });
+
+        const historyLines = fs.readFileSync(historyPath, 'utf8').split('\n');
+        const updatedLines = historyLines.filter(line => {
+            if (!line.trim()) return false;
+            try {
+                const item = JSON.parse(line);
+                return item.timestamp !== timestamp;
+            } catch(e) { return true; } // Keep corrupted lines or handle them
+        });
+
+        fs.writeFileSync(historyPath, updatedLines.join('\n') + (updatedLines.length > 0 ? '\n' : ''));
+        res.json({ success: true });
+    } catch (err) {
+        console.error("Delete history error:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 
 // Start Server (Express Listener for Cloud Run)
 hApp.listen(PORT, '0.0.0.0', () => {
