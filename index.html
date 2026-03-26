@@ -735,7 +735,7 @@
                 tr.innerHTML = `
                     <td>${w.Date || '—'}</td>
                     <td>${w.EquipmentType || '—'}</td>
-                    <td>${w.Issue || '—'}</td>
+                    <td>${(w.Issue || '—').replace(/\n/g, '<br>')}</td>
                     <td>${w.Lead || '—'}</td>
                     <td>${w.DARN || '—'}</td>
                     <td>${w.Quote || '—'}</td>
@@ -1177,28 +1177,30 @@
                 $('status-pill').className = 'status-pill pill-done';
                 $('status-pill').textContent = `✅ Job #${jobId} loaded`;
                 $('btn-fetch').textContent = '🔄 Reload';
+                $('btn-publish').style.display = '';
+                $('btn-print').style.display = '';
+
+                // Update right sidebar insights
+                const works = data.OutstandingWorks || [];
+                $('agent-insights').innerHTML = '<div class="insight-card"><h4>📋 Job #' + jobId + '</h4><p>' + (data.Client || 'Unknown') + ' — ' + (data.Site || 'Unknown') + '</p></div><div class="insight-card"><h4>🔧 Outstanding Works</h4><p>' + works.length + ' item(s) found</p></div><div class="insight-card"><h4>📅 AFSS Due</h4><p>' + (data.AFSSDue || 'Not set') + '</p></div>';
 
                 // Build a clean, concise summary for the chat
                 const contact = data.SiteContact || {};
-                const works = data.OutstandingWorks || [];
-                let summary = `<strong>✅ Job #${jobId} — Loaded!</strong><br><br>`;
+                let summary = `<strong>✅ Job #${jobId} — Successfully Loaded</strong><br><br>`;
                 summary += `<strong>Client:</strong> ${data.Client || '—'}<br>`;
                 summary += `<strong>Site:</strong> ${data.Site || '—'}<br>`;
-                summary += `<strong>Contact:</strong> ${contact.Name || '—'}<br>`;
-                summary += `<strong>Phone:</strong> ${contact.Phone || '—'}<br>`;
-                summary += `<strong>Email:</strong> ${contact.Email || '—'}<br>`;
+                summary += `<strong>Contact Info:</strong> ${contact.Name || '—'} | ${contact.Phone || '—'} | ${contact.Email || '—'}<br>`;
                 summary += `<strong>AFSS Due:</strong> ${data.AFSSDue || '—'}<br>`;
-                summary += `<strong>Service:</strong> ${data.ServiceDue?.Type || '—'} (${data.ServiceDue?.Month || ''} ${data.ServiceDue?.Year || ''})<br>`;
                 summary += `<strong>Outstanding Works:</strong> ${works.length} item(s)`;
                 if (works.length > 0) {
                     works.forEach((w, i) => {
-                        summary += `<br>📋 <strong>Work ${i+1}:</strong> ${w.EquipmentType || 'N/A'} — Job #${w.Job || '—'} | Status: ${w.Status || 'Pending'}`;
+                        summary += `<br>▪ <strong>Work ${i+1}:</strong> ${w.EquipmentType || 'N/A'} (Issue: ${w.Issue ? w.Issue.substring(0,35) + '...' : 'None'}) | Status: ${w.Status || 'Pending'}`;
                     });
                 }
-                summary += `<br><br>📄 Full details are on the form. Want me to verify the data, or are we ready to print?`;
+                summary += `<br><br>The data is loaded into the form. Would you like me to verify the fields, or are you ready to dispatch the email?`;
                 return summary;
             } catch (err) {
-                return `❌ Failed to fetch Job #${jobId}: ${err.message}. Double-check the ID and try again — I don't tolerate typos!`;
+                return `❌ Failed to fetch Job #${jobId}: ${err.message}. Please verify the Job ID and try again.`;
             }
         }
 
@@ -1267,39 +1269,39 @@
                     const sMonth = this.getFieldValue('f-6mo-month');
                     const sYear = this.getFieldValue('f-6mo-year');
 
-                    res = `<strong>📍 Step 1: Verification Audit</strong><br>Alright, let's audit Job #${currentJob}:<br><br>`;
+                    res = `<strong>📍 Verification Audit</strong><br>Reviewing Job #${currentJob}:<br><br>`;
                     res += `✅ <strong>Client:</strong> ${client || 'Unknown'}<br>`;
                     res += `✅ <strong>Site:</strong> ${site || 'Unknown'}<br>`;
-                    res += `${contact ? '✅' : '⚠️'} <strong>Contact:</strong> ${contact || '<em>Missing!</em>'}<br>`;
-                    res += `${phone ? '✅' : '⚠️'} <strong>Phone:</strong> ${phone || '<em>Missing</em>'}<br>`;
-                    res += `${email ? '✅' : '⚠️'} <strong>Email:</strong> ${email || '<em>Missing</em>'}<br>`;
+                    res += `${contact ? '✅' : '⚠️'} <strong>Contact:</strong> ${contact || 'Missing'}<br>`;
+                    res += `${phone ? '✅' : '⚠️'} <strong>Phone:</strong> ${phone || 'Missing'}<br>`;
+                    res += `${email ? '✅' : '⚠️'} <strong>Email:</strong> ${email || 'Missing'}<br>`;
                     res += `✅ <strong>AFSS Due:</strong> ${afss || 'N/A'}<br>`;
                     res += `✅ <strong>Service:</strong> ${service6} — ${sMonth} ${sYear}`;
-                    followUp = "<br><br>That's the report. Does this look accurate to you? If yes, we're ready for <strong>Step 2 (Print)</strong>.";
+                    followUp = "<br><br>Verification complete. If the data is accurate, you may proceed to dispatch the email.";
                     intentMatched = 'verify';
                 } else {
-                    speak("I can't verify data that doesn't exist — load a job first!", "Type a job number to get started.", "error");
+                    speak("I cannot verify data because no job is currently loaded.", "Please provide a Job ID.", "error");
                 }
             }
 
-            // 3. Negations (Refusals take priority over affirmations)
-            else if (q.match(/\b(no|nope|nah|not yet|not ready|will not|do not|don't|stop|wait|hold on|cancel|don't want|dont want)\b/) || q.match(/not (correct|good|right|ready|accurate|wanting|now)/)) {
+            // 3. Negations
+            else if (q.match(/\b(no|nope|nah|not yet|not ready|will not|do not|don't|stop|wait|hold on|cancel)\b/) || q.match(/not (correct|good|right|ready|accurate)/)) {
                 if (this.context.lastIntent === 'confirm' || this.context.lastIntent === 'verify') {
-                    speak("Understood — I'll hold the line. No printing until you give the word. What needs a closer look?", "You can ask me about specific fields like 'What is the phone number?'.", "negate");
+                    speak("Understood. Dispatch paused. Please let me know which fields require correction.", "", "negate");
                 } else {
-                    speak("Copy that. Standing by for your next command.", "What's the plan?", "negate");
+                    speak("Acknowledged. Awaiting your next command.", "", "negate");
                 }
             }
 
-            // 4. Affirmations (Confirming the data is correct)
+            // 4. Affirmations
             else if (q.match(/\b(yes|yeah|yep|yup|sure|absolutely|confirmed|correct|right|do it|go for it|ready)\b/) || 
-                q.match(/looks (good|correct|accurate|right)|details (are|seem) (good|correct|accurate|right)|everything (is|seems) (good|correct|accurate|right)|i think.*(correct|good|accurate|right)|it is (correct|good|accurate|right)|spot on|perfecto|assessed/)
+                q.match(/looks (good|correct|accurate|right)|details (are|seem) (good|correct|accurate|right)|everything (is|seems) (good|correct|accurate|right)|i think.*(correct|good|accurate|right)|it is (correct|good|accurate|right)/)
             ) {
                 if (this.context.lastIntent === 'verify' || this.context.lastIntent === 'fetch') {
-                    speak("<strong>📍 Step 2: Primed for Printing</strong><br>Outstanding! I've logged your assessment — we're officially cleared for takeoff. The data is verified and the form is primed.", 
-                          "Whenever you're ready, say <strong>print</strong> to generate the sheet, or let me know if you want to double-check a specific detail first!", "confirm");
+                    speak("<strong>📍 Ready for Dispatch</strong><br>Data verification confirmed. The form is ready.", 
+                          "Whenever you are ready, click <strong>Save and Sent to Email</strong>, or command me to <strong>send it</strong>.", "confirm");
                 } else {
-                    speak("Confirmed! I like the confidence. What should we tackle next?", "You can type a job ID or ask for help.", "affirm");
+                    speak("Acknowledged. Please specify your next request.", "", "affirm");
                 }
             }
             
@@ -1325,50 +1327,67 @@
             }
             else if (q.match(/afss|due|expiry|date/)) {
                 const afss = this.getFieldValue('f-afss');
-                if (afss) speak(`The AFSS due date is <strong>${afss}</strong>.`, "We still have time, or is it urgent?", "query_afss");
-                else speak("I don't see an AFSS date loaded.", "Check the job ID and try again.", "error");
+                if (afss) speak(`The AFSS due date is <strong>${afss}</strong>.`, "", "query_afss");
+                else speak("I do not see an AFSS date currently loaded.", "Please check the Job ID.", "error");
+            }
+            
+            // 5a. Dataset queries
+            else if (q.match(/outstanding|works|issue|how many|equipment/)) {
+                const worksBody = $('f-works-body');
+                let count = 0;
+                let details = [];
+                if (worksBody) {
+                    Array.from(worksBody.rows).forEach(row => {
+                        const cells = Array.from(row.cells);
+                        if (cells.length >= 10 && cells.some(c => c.textContent.trim() !== '')) {
+                            count++;
+                            details.push(cells[1].textContent.trim() || 'Unknown Equipment');
+                        }
+                    });
+                }
+                if (count > 0) {
+                    speak(`There are currently <strong>${count}</strong> outstanding work item(s) logged.`, `Equipment types include: ${details.slice(0, 3).join(', ')}${details.length > 3 ? '...' : ''}.`, "query_works");
+                } else {
+                    speak("There are no outstanding works loaded for the current job.", "Please verify the Job ID or consult simPRO.", "error");
+                }
             }
 
             // 6. General Intents
-            else if (q.includes("how are you")) {
-                speak("Functioning at peak efficiency — sharper than a fire axe and twice as ready. My circuits are buzzing with job data and I wouldn't have it any other way.", 
-                      "You though? How are <em>you</em> doing? Any jobs need auditing?", "greeting");
+            else if (q.includes("how are you") || /\bhi\b|\bhello\b|\bgday\b/.test(q)) {
+                speak("Hello. I am the FPOWS Intelligence Assistant.", "Please provide a simPRO Job ID to begin, or ask me for details regarding the currently loaded job.", "greeting");
             } 
-            else if (/\bhi\b|\bhello\b|\bgday\b/.test(q)) {
-                speak("Salutations! The FPOWS Intelligence Agent is online, caffeinated, and ready to command your data.", 
-                      "What are we tackling today? Just type a job number.", "greeting");
+            else if (q.match(/thank|thanks|appreciate|ty\b/)) {
+                speak("You are very welcome.", "Please let me know if you require further assistance.", "gratitude");
             } 
-            else if (q.match(/thank|thanks|cheers|appreciate|ty\b/)) {
-                const job = this.getFieldValue('f-jobid');
-                speak(job ? `You're very welcome! Job #${job} is looking sharp under my watch.` : "You're very welcome! I live to be helpful. Bring me more jobs!", 
-                      "What's next on the agenda?", "gratitude");
-            } 
-            else if (q.match(/\bbye\b|goodbye|see you|cya|done|finished|all done/)) {
-                speak("Roger that! Go forth and conquer. I'll be here, quietly judging incomplete AFSS data in simPRO until you return.", "Stay safe out there! 🔥", "exit");
+            else if (q.match(/\bbye\b|goodbye|done|finished/)) {
+                speak("Goodbye.", "Have a productive day.", "exit");
             }
             else if (q.match(/current|loaded|this job|active|walk|detail|about|tell me/)) {
                 const currentJob = this.getFieldValue('f-jobid');
                 if (currentJob) {
-                    speak(`Locked and loaded! Job #${currentJob}: <strong>${this.getFieldValue('f-client')}</strong> at <strong>${this.getFieldValue('f-site')}</strong>.`, 
-                          "Want me to run a full verification (<strong>Step 1</strong>), or are we heading to print?", "walkthrough");
+                    speak(`Job #${currentJob} is currently active: <strong>${this.getFieldValue('f-client')}</strong> at <strong>${this.getFieldValue('f-site')}</strong>.`, 
+                          "Would you like me to run a full verification?", "walkthrough");
                 } else {
-                    speak("There's nothing loaded yet — the form is as blank as a Monday morning.", "Give me a job number and I'll fix that.", "error");
+                    speak("No job is currently loaded.", "Please provide a Job ID.", "error");
                 }
             } 
+            else if (q.match(/\b(send it|send|dispatch|publish)\b/)) {
+                if ($('btn-publish').style.display === 'none') {
+                    speak("There is no job currently loaded for dispatch.", "Please fetch a valid Job ID first.", "error");
+                } else {
+                    speak("<strong>📤 Initiating Dispatch...</strong><br>The email sequence has been triggered.", "Please check the status indicator for confirmation.", "send");
+                    setTimeout(() => $('btn-publish').click(), 500);
+                }
+            }
             else if (q.includes("print") || q.includes("save")) {
-                speak("<strong>📍 Final Step: Printing</strong><br>Follow these steps: 1️⃣ Check data. 2️⃣ Click **Print** (top right). 3️⃣ Save as PDF or print.", "Are all details verified?", "print");
+                speak("<strong>📍 Printing</strong><br>To generate a hard copy or PDF, please use the Print button in the top navigation.", "", "print");
             } 
-            else if (q.includes("who are you")) {
-                speak("I am the FPOWS Intelligence Agent — built to eliminate errors and command your workflows. Legend status? Absolutely.", 
-                      "What can I do for you today?", "greeting");
-            } 
-            else if (q.includes("help") || q.includes("what can you do")) {
-                speak("I'm more capable than I look. I can fetch jobs, verify accuracy (Step 1), and guide you to print (Step 2).", 
-                      "What's the mission?", "help");
+            else if (q.includes("help") || q.includes("what can you do") || q.includes("who are you")) {
+                speak("I am the FPOWS Professional Assistant. My capabilities include:<br>1. Fetching job data from simPRO.<br>2. Verifying the accuracy of job details.<br>3. Summarizing outstanding works.<br>4. Triggering external email dispatch.", 
+                      "Please supply a Job ID to begin.", "help");
             } 
             else {
-                const openers = ["Hmm, that's above my pay grade! 🤔", "I'm sharp, but not a mind-reader — yet!", "That's not in my manual, chief."];
-                speak(openers[Math.floor(Math.random() * openers.length)] + " Try a **job number** or ask me to **verify data**.", "Or type **help**.", "unknown");
+                speak("I am unable to interpret that request.", "Consult the available commands by typing **help**, or provide a valid Job ID.", "unknown");
             }
 
             this.context.lastIntent = intentMatched;

@@ -35,6 +35,42 @@ if (!SIMPRO_BASE_URL || !SIMPRO_ACCESS_TOKEN) {
     console.error("[CRITICAL] Missing SIMPRO_BASE_URL or SIMPRO_ACCESS_TOKEN in environment.");
 }
 
+// Reusable SMTP transporter (created once, connection pooled)
+let emailTransporter = null;
+function getTransporter() {
+    if (!emailTransporter && SMTP_USER && SMTP_PASS) {
+        emailTransporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: { user: SMTP_USER, pass: SMTP_PASS },
+            pool: true,
+            maxConnections: 3,
+            connectionTimeout: 10000,
+            greetingTimeout: 10000,
+            socketTimeout: 30000,
+        });
+        console.log('[SMTP] Transporter created with pooling and timeouts.');
+    }
+    return emailTransporter;
+}
+
+// Simple retry helper for sending email
+async function sendMailWithRetry(transporter, mailOptions, retries = 1) {
+    for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+            const info = await transporter.sendMail(mailOptions);
+            return info;
+        } catch (err) {
+            console.error(`[SMTP] Attempt ${attempt + 1} failed: ${err.message}`);
+            if (attempt < retries) {
+                console.log(`[SMTP] Retrying in 2s...`);
+                await new Promise(r => setTimeout(r, 2000));
+            } else {
+                throw err;
+            }
+        }
+    }
+}
+
 const getSimpro = async (path) => {
     if (!SIMPRO_BASE_URL) throw new Error("SIMPRO_BASE_URL not configured");
     const rawUrl = `${SIMPRO_BASE_URL.replace(/\/$/, '')}${path.startsWith('/') ? '' : '/'}${path}`;
@@ -370,7 +406,8 @@ hApp.post('/api/send-email', async (req, res) => {
         const { jobId, recipientEmail, managerEmail, htmlContent, subject, clientName } = req.body;
         console.log(`[EMAIL] Job #${jobId} -> ${recipientEmail}, Manager: ${managerEmail}`);
 
-        if (!SMTP_USER || !SMTP_PASS) {
+        const transporter = getTransporter();
+        if (!transporter) {
             return res.status(500).json({ error: 'Email not configured. Set SMTP_USER and SMTP_PASS in environment.' });
         }
 
@@ -378,28 +415,26 @@ hApp.post('/api/send-email', async (req, res) => {
             return res.status(400).json({ error: 'No recipient email addresses provided.' });
         }
 
-        const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: { user: SMTP_USER, pass: SMTP_PASS }
-        });
-
         const recipients = [recipientEmail, (managerEmail && managerEmail.trim()) || MANAGER_EMAIL].filter(Boolean).join(',');
+
+        // Check logo exists before attaching
+        const logoPath = path.join(__dirname, 'logo.png');
+        const attachments = [];
+        if (fs.existsSync(logoPath)) {
+            attachments.push({ filename: 'logo.png', path: logoPath, cid: 'redmen-logo' });
+        } else {
+            console.warn('[EMAIL] logo.png not found, sending without logo attachment.');
+        }
 
         const mailOptions = {
             from: `"FPOWS Automation" <${SMTP_USER}>`,
             to: recipients,
             subject: subject || `FPOWS Call Sheet - Job #${jobId} - ${clientName || 'Unknown Client'}`,
             html: htmlContent,
-            attachments: [
-                {
-                    filename: 'logo.png',
-                    path: path.join(__dirname, 'logo.png'),
-                    cid: 'redmen-logo'
-                }
-            ]
+            attachments
         };
 
-        await transporter.sendMail(mailOptions);
+        await sendMailWithRetry(transporter, mailOptions, 1);
         
         // Structured Log Entry
         const logEntry = {
