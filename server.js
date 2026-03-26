@@ -6,6 +6,7 @@ import axios from 'axios';
 import dotenv from 'dotenv';
 import { z } from 'zod';
 import nodemailer from 'nodemailer';
+import express from 'express';
 
 // Load .env if not in production
 if (process.env.NODE_ENV !== 'production') {
@@ -70,20 +71,22 @@ const fetchFpowData = async (jobId) => {
     let siteName = jobData.Site?.Name || "Site Details Not Found";
     
     // 2. Contact Parse
+    let contactSource = jobData.Contact?.Name ? "simpro_direct" : "not_found";
     const desc = jobData.Description || "";
     const nameMatch = desc.match(/Name:\s*([^<\n\r]+)/i);
     const phoneMatch = desc.match(/Phone[^:]*:\s*([^<\n\r]+)/i);
     const emailMatch = desc.match(/Email:\s*([^<\n\r]+)/i);
 
-    let contactName = jobData.Contact?.Name || (nameMatch ? nameMatch[1].trim() : "");
-    let contactPhone = jobData.Contact?.Phone || (phoneMatch ? phoneMatch[1].trim() : "");
-    let contactEmail = jobData.Contact?.Email || (emailMatch ? emailMatch[1].trim() : "");
+    let contactName = jobData.Contact?.Name || (nameMatch ? (contactSource="description", nameMatch[1].trim()) : "");
+    let contactPhone = jobData.Contact?.Phone || (phoneMatch ? (contactSource="description", phoneMatch[1].trim()) : "");
+    let contactEmail = jobData.Contact?.Email || (emailMatch ? (contactSource="description", emailMatch[1].trim()) : "");
 
     if (!contactName && jobData.Site?.ID) {
         try {
             const scRes = await getSimpro(`/api/v1.0/companies/${COMPANY_ID}/sites/${jobData.Site.ID}/contacts/`);
             if (scRes.data && scRes.data.length > 0) {
                 contactName = `${scRes.data[0].GivenName || ''} ${scRes.data[0].FamilyName || ''}`.trim();
+                contactSource = "site_contacts";
             }
         } catch (e) {}
     }
@@ -104,53 +107,118 @@ const fetchFpowData = async (jobId) => {
 
     if (siteId) {
         try {
-            const jobsRes = await getSimpro(`/api/v1.0/companies/${COMPANY_ID}/jobs/?SiteID=${siteId}&Stage=Progress&pageSize=50`);
+            const jobsRes = await getSimpro(`/api/v1.0/companies/${COMPANY_ID}/jobs/?Site.ID=${siteId}&pageSize=50`);
             if (jobsRes.data && jobsRes.data.length > 0) {
                 const jobDetails = await Promise.all(jobsRes.data.map(async (j) => {
                     try {
                         const detailRes = await getSimpro(`/api/v1.0/companies/${COMPANY_ID}/jobs/${j.ID}`);
                         const dj = detailRes.data;
-                        const descStrip = (dj.Description || "").replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
                         
-                        let sq = "";
-                        const qRes = await getSimpro(`/api/v1.0/companies/${COMPANY_ID}/quotes/?JobID=${j.ID}`);
-                        if (qRes.data && qRes.data.length > 0) sq = qRes.data[0].ID;
+                        // STRICT STATUS FILTER: Whitelist ONLY Pending and Progress
+                        if (dj.Stage) {
+                            const st = dj.Stage.toLowerCase();
+                            if (!(st.includes('pending') || st.includes('progress'))) {
+                                return null;
+                            }
+                        }
+                        
+                        const descFormatted = (dj.Description || "")
+                            .replace(/<br\s*\/?>/gi, '\n')
+                            .replace(/<\/p>|<\/div>/gi, '\n')
+                            .replace(/<[^>]+>/g, '')
+                            .replace(/[ \t]+/g, ' ')
+                            .trim();
+                        
+                        let sq = dj.Quote ? dj.Quote.ID : "";
 
-                        // Robust Equipment Type Lookup
-                        let eqType = "";
-                        try {
-                            const secRes = await getSimpro(`/api/v1.0/companies/${COMPANY_ID}/jobs/${j.ID}/sections/`);
-                            if (secRes.data && secRes.data.length > 0) {
-                                for (const section of secRes.data) {
-                                    const ccRes = await getSimpro(`/api/v1.0/companies/${COMPANY_ID}/jobs/${j.ID}/sections/${section.ID}/costCenters/`);
-                                    if (ccRes.data && ccRes.data.length > 0) {
-                                        for (const cc of ccRes.data) {
-                                            const rawName = cc.Name || cc.CostCenter?.Name || "";
-                                            if (rawName && !rawName.toLowerCase().includes("general")) {
-                                                eqType = rawName; break;
+                        // Robust Equipment Type Lookup: Prioritize Job/Service Name over Cost Center
+                        let rawEq = (dj.Service?.Name || dj.Name || "").trim();
+                        // If the name is just a number (like a Quote ID), it's not a valid Equipment Type; ignore it.
+                        let eqType = /^\d+$/.test(rawEq) ? "" : rawEq;
+                        
+                        // If empty, too generic, or was a number, try digging into Cost Centers
+                        if (!eqType || eqType.toLowerCase().includes("general")) {
+                            try {
+                                const secRes = await getSimpro(`/api/v1.0/companies/${COMPANY_ID}/jobs/${j.ID}/sections/`);
+                                if (secRes.data && secRes.data.length > 0) {
+                                    for (const section of secRes.data) {
+                                        const ccRes = await getSimpro(`/api/v1.0/companies/${COMPANY_ID}/jobs/${j.ID}/sections/${section.ID}/costCenters/`);
+                                        if (ccRes.data && ccRes.data.length > 0) {
+                                            for (const cc of ccRes.data) {
+                                                const rawName = cc.Name || cc.CostCenter?.Name || "";
+                                                if (rawName && !rawName.toLowerCase().includes("general")) {
+                                                    // Strip accounting noise: Division, Income, Sales, etc.
+                                                    eqType = rawName.replace(/\s*(?:Division|Sales|Income|Division Income|Center)\s*$/i, "").trim();
+                                                    break;
+                                                }
                                             }
                                         }
+                                        if (eqType && !eqType.toLowerCase().includes("general")) break;
                                     }
-                                    if (eqType) break;
                                 }
-                            }
-                        } catch (e) {}
-
-                        if (!eqType || eqType.toLowerCase().includes("general")) {
-                            eqType = dj.Name || "Service Job";
+                            } catch (e) {}
                         }
+
+                        // Final fallback to raw name if cost center didn't help (at least we tried)
+                        if (!eqType) eqType = rawEq || "Service Job";
+
+
 
                         // DARN Search
                         let darnVal = "";
-                        const darnMatch = (dj.Description || "").match(/DARN[:#\s\.]*([A-Z0-9-]+)/i);
-                        if (darnMatch) darnVal = darnMatch[1];
+                        let darnSource = "";
+                        const darnMatch = (dj.Description || "").match(/DARN\W*(?:form|no|number|#|id)*\W*([A-Z0-9-]*\d+[A-Z0-9-]*)/i);
+                        if (darnMatch) { darnVal = darnMatch[1]; darnSource = "description"; }
+                        
+                        // Lead Search
+                        let leadVal = dj.Lead ? dj.Lead.ID : "";
+                        let leadSource = dj.Lead ? "linked" : "";
+                        if (!leadVal) {
+                            const leadMatch = (dj.Description || "").match(/Lead\W*(?:no|number|#|id)*\W*([A-Z0-9-]*\d+[A-Z0-9-]*)/i);
+                            if (leadMatch) { leadVal = leadMatch[1]; leadSource = "description"; }
+                        }
+
+                        // Quote Search
+                        let quoteVal = dj.Quote ? dj.Quote.ID : "";
+                        let quoteSource = dj.Quote ? "linked" : "";
+                        if (!quoteVal) {
+                            const quoteMatch = (dj.Description || "").match(/Quote\W*(?:no|number|#|id)*\W*([A-Z0-9-]*\d+[A-Z0-9-]*)/i);
+                            if (quoteMatch) { quoteVal = quoteMatch[1]; quoteSource = "description"; }
+                        }
+                        
+                        // Native Job Notes Search (Fallback)
                         if (!darnVal) {
+                            const darnMatchNotes = (dj.Notes || "").match(/DARN\W*(?:form|no|number|#|id)*\W*([A-Z0-9-]*\d+[A-Z0-9-]*)/i);
+                            if (darnMatchNotes) { darnVal = darnMatchNotes[1]; darnSource = "job_notes"; }
+                        }
+                        if (!leadVal) {
+                            const leadMatchNotes = (dj.Notes || "").match(/Lead\W*(?:no|number|#|id)*\W*([A-Z0-9-]*\d+[A-Z0-9-]*)/i);
+                            if (leadMatchNotes) { leadVal = leadMatchNotes[1]; leadSource = "job_notes"; }
+                        }
+                        if (!quoteVal) {
+                            const quoteMatchNotes = (dj.Notes || "").match(/Quote\W*(?:no|number|#|id)*\W*([A-Z0-9-]*\d+[A-Z0-9-]*)/i);
+                            if (quoteMatchNotes) { quoteVal = quoteMatchNotes[1]; quoteSource = "job_notes"; }
+                        }
+                        
+                        // Communication Notes Search (Deep Fallback)
+                        if (!darnVal || !leadVal || !quoteVal) {
                             try {
                                 const notesRes = await getSimpro(`/api/v1.0/companies/${COMPANY_ID}/jobs/${j.ID}/notes/`);
-                                if (notesRes.data) {
+                                if (notesRes.data && notesRes.data.length > 0) {
                                     for (const n of notesRes.data) {
-                                        const m = (n.Note || "").match(/DARN[:#\s\.]*([A-Z0-9-]+)/i);
-                                        if (m) { darnVal = m[1]; break; }
+                                        if (!darnVal) {
+                                            const m = (n.Note || "").match(/DARN\W*(?:form|no|number|#|id)*\W*([A-Z0-9-]*\d+[A-Z0-9-]*)/i);
+                                            if (m) { darnVal = m[1]; darnSource = "comm_notes"; }
+                                        }
+                                        if (!leadVal) {
+                                            const lm = (n.Note || "").match(/Lead\W*(?:no|number|#|id)*\W*([A-Z0-9-]*\d+[A-Z0-9-]*)/i);
+                                            if (lm) { leadVal = lm[1]; leadSource = "comm_notes"; }
+                                        }
+                                        if (!quoteVal) {
+                                            const qm = (n.Note || "").match(/Quote\W*(?:no|number|#|id)*\W*([A-Z0-9-]*\d+[A-Z0-9-]*)/i);
+                                            if (qm) { quoteVal = qm[1]; quoteSource = "comm_notes"; }
+                                        }
+                                        if (darnVal && leadVal && quoteVal) break;
                                     }
                                 }
                             } catch (e) {}
@@ -159,9 +227,13 @@ const fetchFpowData = async (jobId) => {
                         return {
                             Date: dj.DateIssued ? new Date(dj.DateIssued).toLocaleDateString('en-AU') : "",
                             EquipmentType: eqType,
-                            Issue: descStrip,
+                            Issue: descFormatted,
+                            Lead: leadVal ? `#${leadVal}` : "",
+                            LeadSource: leadSource,
                             DARN: darnVal, 
-                            Quote: sq ? `#${sq}` : "", 
+                            DARNSource: darnSource,
+                            Quote: quoteVal ? `#${quoteVal}` : "", 
+                            QuoteSource: quoteSource,
                             Job: j.ID ? `#${j.ID}` : "", 
                             Comment: "",
                             Status: dj.Stage || "pending"
@@ -171,17 +243,40 @@ const fetchFpowData = async (jobId) => {
                 outstandingWorks.push(...jobDetails.filter(d => d !== null));
             }
 
-            const quotesRes = await getSimpro(`/api/v1.0/companies/${COMPANY_ID}/quotes/?SiteID=${siteId}&Stage=Pending&pageSize=50`);
+            const quotesRes = await getSimpro(`/api/v1.0/companies/${COMPANY_ID}/quotes/?Site.ID=${siteId}&pageSize=50`);
             if (quotesRes.data && quotesRes.data.length > 0) {
                 for (const q of quotesRes.data) {
+                    if (q.Stage) {
+                        const qs = q.Stage.toLowerCase();
+                        if (!qs.includes('pending')) {
+                            continue;
+                        }
+                    }
+                    
+                    let qLead = q.Lead ? q.Lead.ID : "";
                     outstandingWorks.push({
                         Date: q.DateIssued ? new Date(q.DateIssued).toLocaleDateString('en-AU') : "",
                         EquipmentType: "Quote/Work Needed",
-                        Issue: (q.Description || "").replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(),
-                        DARN: "", Quote: q.ID ? `#${q.ID}` : "", Job: "", Comment: "", Status: q.Stage || "pending"
+                        Issue: (q.Description || "")
+                            .replace(/<br\s*\/?>/gi, '\n')
+                            .replace(/<\/p>|<\/div>/gi, '\n')
+                            .replace(/<[^>]+>/g, '')
+                            .replace(/[ \t]+/g, ' ')
+                            .trim(),
+                        Lead: qLead ? `#${qLead}` : "", DARN: "", Quote: q.ID ? `#${q.ID}` : "", Job: "", Comment: "", Status: q.Stage || "pending"
                     });
                 }
             }
+            // Sort by Status Hierarchy: 1. In Progress, 2. Pending, 3. Other
+            outstandingWorks.sort((a, b) => {
+                const getPriority = (status) => {
+                    const s = (status || "").toLowerCase();
+                    if (s.includes('progress')) return 1;
+                    if (s.includes('pending')) return 2;
+                    return 3;
+                };
+                return getPriority(a.Status) - getPriority(b.Status);
+            });
         } catch (err) {
             console.error(`Aggregation error: ${err.message}`);
         }
@@ -190,8 +285,10 @@ const fetchFpowData = async (jobId) => {
     return {
         JobID: parseInt(jobId), 
         Site: siteName,
-        SiteContact: { Name: contactName || clientName, Phone: contactPhone, Email: contactEmail },
+        SiteContact: { Name: contactName || clientName, Phone: contactPhone, Email: contactEmail, Source: contactSource },
         Client: clientName, 
+        DateCompleted: new Date().toLocaleDateString('en-AU'),
+        DateCallMade: jobData.DateIssued ? new Date(jobData.DateIssued).toLocaleDateString('en-AU') : "Not Issued",
         AFSSDue: jobData.DateIssued ? new Date(new Date(jobData.DateIssued).setFullYear(new Date(jobData.DateIssued).getFullYear() + 1)).toLocaleDateString('en-AU') : "Check simPRO", 
         ServiceDue: {
             Type: (jobData.Name || "").toLowerCase().includes('12 monthly') ? "12 Monthly" : "6 Monthly",
@@ -217,9 +314,9 @@ mcp.addTool({
 });
 
 // Express App for UI and legacy API
-import express from 'express';
 const hApp = express();
 hApp.use(express.json());
+hApp.use(express.static(__dirname));
 
 // Serve index.html
 hApp.get('/', (req, res) => {
@@ -285,7 +382,14 @@ hApp.post('/api/send-email', async (req, res) => {
             from: `"FPOWS Automation" <${SMTP_USER}>`,
             to: recipients,
             subject: subject || `FPOWS Call Sheet - Job #${jobId} - ${clientName || 'Unknown Client'}`,
-            html: htmlContent
+            html: htmlContent,
+            attachments: [
+                {
+                    filename: 'logo.png',
+                    path: path.join(__dirname, 'logo.png'),
+                    cid: 'redmen-logo'
+                }
+            ]
         };
 
         await transporter.sendMail(mailOptions);
@@ -301,7 +405,7 @@ hApp.post('/api/send-email', async (req, res) => {
         };
         
         console.log(`[EMAIL SUCCESS] Job #${jobId} -> ${recipients}`);
-        const logPath = '/tmp/email_history.jsonl';
+        const logPath = path.join(__dirname, 'email_history.jsonl');
         fs.appendFileSync(logPath, JSON.stringify(logEntry) + "\n");
         
         res.json({ success: true, sentTo: recipients });
@@ -314,7 +418,7 @@ hApp.post('/api/send-email', async (req, res) => {
 // Logs endpoint for manager
 hApp.get('/api/logs', (req, res) => {
     try {
-        const logPath = '/tmp/email_history.jsonl';
+        const logPath = path.join(__dirname, 'email_history.jsonl');
         if (!fs.existsSync(logPath)) return res.json({ logs: [] });
         
         const raw = fs.readFileSync(logPath, 'utf8');

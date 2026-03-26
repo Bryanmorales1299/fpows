@@ -1,0 +1,210 @@
+{
+  "ID": 420395,
+  "Type": "Service",
+  "Customer": {
+    "ID": 9770,
+    "CompanyName": "CORDINA FOODS PTY LTD",
+    "GivenName": "",
+    "FamilyName": ""
+  },
+  "CustomerContract": {
+    "ID": 9525,
+    "Name": "CORDINA FOODS PTY LTD",
+    "StartDate": "",
+    "EndDate": "",
+    "ContractNo": ""
+  },
+  "CustomerContact": null,
+  "AdditionalContacts": [],
+  "Site": {
+    "ID": 12571,
+    "Name": "3 London Drive Wyong"
+  },
+  "SiteContact": {
+    "ID": 35801,
+    "GivenName": "Elizabeth Parker or Yolande Hamilton",
+    "FamilyName": "Parker"
+  },
+  "OrderNo": "-",
+  "RequestNo": "",
+  "Name": "",
+  "Description": "<div style=\"font-size: 10pt;\">Rej, 9:51 AM<br />EMERGENCY CALL-OUT 27/11/24<br />Site: 3 London Drive Wyong<br />Contact: Yolande - 61418345702</div><div style=\"font-size: 10pt;\"><br />The panel is indicating a fire in two locations: Zone 3 and Zone 4. The area has been checked, but nothing was found, and it is suspected that the issue may be related to a faulty device. The panel has been isolated, but they request someone to attend today to investigate the cause of the issue.</div>",
+  "Notes": "<div><strong>Please add 1 x Normal HR for tech getting gears<br />Refer to Pick Up Job - Service Job #420425<br /></strong></div><div><strong>15:21 27/11/2024 Monday Medel</strong></div><div>&nbsp;</div><div>&nbsp;</div><div style=\"font-size: 10pt;\">&nbsp;</div>",
+  "DateIssued": "2024-11-27",
+  "DueDate": null,
+  "DueTime": null,
+  "Tags": [],
+  "Salesperson": {
+    "ID": 1594,
+    "Name": "Mishael Garganza",
+    "Type": "employee",
+    "TypeId": 1594
+  },
+  "ProjectManager": {
+    "ID": 1594,
+    "Name": "Mishael Garganza",
+    "Type": "employee",
+    "TypeId": 1594
+  },
+  "Technicians": [
+    {
+      "ID": 100,
+      "Name": "A ELECTRICAL SERVICE JOB",
+      "Type": "employee",
+      "TypeId": 100
+    }
+  ],
+  "Technician": {
+    "ID": 100,
+    "Name": "A ELECTRICAL SERVICE JOB",
+    "Type": "employee",
+    "TypeId": 100
+  },
+  "Stage": "Progress",
+  "ArchiveReason": null,
+  "Status": {
+    "ID": 155,
+    "Name": "JOB IN PROGRESS",
+    "Color": "#4cffb1"
+  },
+  "ResponseTime": {},
+  "IsVariation": false,
+  "LinkedVariations": [],
+  "ConvertedFromQuote": null,
+  "ConvertedFrom": null,
+  "DateModified": "2024-11-28T00:32:25+11:00",
+  "AutoAdjustStatus": true,
+  "IsRetentionEnabled": false,
+  "Total": {
+    "ExTax": 1077.12,
+    "Tax": 107.71,
+    "IncTax": 1184.83
+  },
+  "Totals": {
+    "MaterialsCost": {
+      "Actual": 0,
+      "Committed": 538.56,
+      "Estimate": 538.56,
+      "Revised": 0,
+      "Revized": 0
+    },
+    "ResourcesCost": {
+      "Total": {
+        "Actual": 0,
+        "Committed": 0,
+        "Estimate": 0,
+        "Revised": 0,
+        "Revized": 0
+      },
+      "Labor": {
+        "Actual": 0,
+        "Committed": 0,
+        "Estimate": 0,
+        "Revised": 0,
+        "Revized": 0
+      },
+      "LaborHours": {
+        "Actual": 9.25,
+        "Committed": 0,
+        "Estimate": 0,
+        "Revised": 0,
+        "Revized": 0
+      },
+      "PlantAndEquipment": {
+        "Actual": 0,
+        "Committed": 0,
+        "Estimate": 0,
+        "Revised": 0,
+        "Revized": 0
+      },
+      "PlantAndEquipmentHours": {
+        "Actual": 0,
+        "Estimate": 0,
+        "Revised": 0,
+        "Revized": 0
+      },
+      "Commission": {
+        "Actual": 0,
+        "Estimate": 0,
+        "Revised": 0
+      },
+      "Overhead": {
+        "Actual": 0,
+        "Committed": 0,
+        "Estimate": 0,
+        "Revised": 0,
+        "Revized": 0
+      }
+    },
+    "MaterialsMarkup": {
+      "Actual": 538.56,
+      "Estimate": 538.56,
+      "Revised": 0,
+      "Revized": 0
+    },
+    "ResourcesMarkup": {
+      "Total": {
+        "Actual": 0,
+        "Estimate": 0,
+        "Revised": 0,
+        "Revized": 0
+      },
+      "Labor": {
+        "Actual": 0,
+        "Estimate": 0,
+        "Revised": 0,
+        "Revized": 0
+      },
+      "PlantAndEquipment": {
+        "Actual": 0,
+        "Estimate": 0,
+        "Revised": 0,
+        "Revized": 0
+      }
+    },
+    "Adjusted": {
+      "Actual": 0,
+      "Estimate": 0,
+      "Revised": 0,
+      "Revized": 0
+    },
+    "MembershipDiscount": 0,
+    "Discount": 0,
+    "STCs": 0,
+    "VEECs": 0,
+    "GrossProfitLoss": {
+      "Actual": 538.56,
+      "Estimate": 538.56,
+      "Revised": 0,
+      "Revized": 0
+    },
+    "GrossMargin": {
+      "Actual": 50,
+      "Estimate": 50,
+      "Revised": 0,
+      "Revized": 0
+    },
+    "NettProfitLoss": {
+      "Actual": 538.56,
+      "Estimate": 538.56,
+      "Revised": 0,
+      "Revized": 0
+    },
+    "NettMargin": {
+      "Actual": 50,
+      "Estimate": 50,
+      "Revised": 0,
+      "Revized": 0
+    },
+    "InvoicedValue": 0,
+    "InvoicePercentage": 0
+  },
+  "CustomFields": [],
+  "STC": {
+    "STCsEligible": false,
+    "VEECsEligible": false,
+    "STCValue": 0,
+    "VEECValue": 0
+  },
+  "CompletedDate": null
+}

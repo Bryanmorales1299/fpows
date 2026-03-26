@@ -29,7 +29,7 @@
         .search-row { 
             display: flex; align-items: center; gap: 12px; 
             flex: 1; justify-content: flex-end;
-            max-width: 800px; flex-wrap: wrap;
+            max-width: none; flex-wrap: wrap;
         }
         .search-row input, .search-row select {
             padding: 10px 16px; border-radius: 8px; border: 1px solid #3d3d5c;
@@ -37,8 +37,8 @@
             font-size: 0.9rem; outline: none; transition: all 0.2s ease;
             height: 42px;
         }
-        .search-row select { flex: 2; min-width: 250px; cursor: pointer; }
-        .search-row input { flex: 0.5; min-width: 140px; }
+        .search-row select { flex: 0 1 450px; min-width: 250px; cursor: pointer; }
+        .search-row input { flex: 0 0 160px; }
         
         .search-row input:focus, .search-row select:focus { 
             border-color: var(--accent); background: #2a2a45;
@@ -73,7 +73,7 @@
         .pill-error    { background: #2e1010; color: #cc5252; border: 1px solid #c0392b; }
 
         /* ── Page wrapper ── */
-        .page-wrapper { max-width: 1600px; margin: 30px auto; padding: 0 24px 60px; }
+        .page-wrapper { max-width: 98%; margin: 30px auto; padding: 0 12px 60px; }
 
         /* ── FPOWS Form UI Alignment ── */
         #fpows-form {
@@ -112,11 +112,26 @@
             text-align: left; border-right: 1px solid #444;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
+        /* Specific Column Widths to prevent wrapping */
+        .works-table th:nth-child(1) { width: 120px !important; } /* Date (Expanded) */
+        .works-table th:nth-child(2) { width: 110px; }            /* Equipment Type */
+        .works-table th:nth-child(3) { width: auto; }             /* Issue (Fluid) */
+        .works-table th:nth-child(4) { width: 85px; }             /* Lead # */
+        .works-table th:nth-child(5) { width: 85px; }             /* Darn # */
+        .works-table th:nth-child(6) { width: 85px; }             /* Quote # */
+        .works-table th:nth-child(7) { width: 110px !important; } /* Job # (Expanded) */
+        .works-table th:nth-child(8) { width: 100px; }            /* Responsibility */
+        .works-table th:nth-child(9) { width: 100px; }            /* Comment */
+        .works-table th:nth-child(10) { width: 110px; }           /* Status */
+
         .works-table td {
-            padding: 12px; font-size: 0.8rem; color: #111;
+            padding: 10px 12px; font-size: 0.8rem; color: #111;
             border: 1px solid #e8e8e8; vertical-align: top;
-            word-wrap: break-word; line-height: 1.5;
+            word-wrap: break-word; line-height: 1.4;
+            white-space: pre-line; /* Preserves line breaks for cleaner layout */
         }
+        .col-id { white-space: nowrap !important; } /* Prevents IDs from breaking */
+
         .works-table .col-status { text-align: center; vertical-align: middle; }
         .works-table td[colspan] { text-align: center; color: #aaa; font-style: italic; }
         .works-table tr:nth-child(even) td { background: #f9f9f9; }
@@ -204,57 +219,48 @@
         @keyframes spin { to { transform: rotate(360deg); } }
 
         @media print {
-            @page { margin: 1cm; size: portrait; }
-            .control-bar, .print-btn, #error-banner, #loading-overlay, #agent-sidebar, .email-modal-overlay { display: none !important; }
+            @page { margin: 0.5cm; size: portrait; }
+            .control-bar, .print-btn, #error-banner, #loading-overlay, #agent-sidebar, .email-modal-overlay, #chat-trigger, #chat-window { display: none !important; }
             
-            body { background: white; padding: 0; margin: 0; }
-            .page-wrapper { max-width: none; width: 100%; margin: 0; padding: 0; display: block !important; }
+            body { background: white; padding: 0; margin: 0; font-size: 9pt; }
+            .page-wrapper { max-width: none; width: 100% !important; margin: 0; padding: 0; display: block !important; }
             
             #fpows-form { 
                 box-shadow: none !important; 
-                border: 1px solid #000 !important; 
+                border: none !important; 
                 width: 100% !important;
-                opacity: 1 !important;
+                padding: 0 !important;
+                margin: 0 !important;
             }
 
-            .works-table { width: 100% !important; table-layout: fixed !important; }
+            .works-table { width: 100% !important; table-layout: auto !important; border-collapse: collapse !important; }
+            .works-table th, .works-table td { font-size: 7pt !important; padding: 4px 3px !important; border: 1px solid #000 !important; }
             
-            /* Explicit column widths for Outstanding Works (10 columns) */
-            #works-table th:nth-child(1), #works-table td:nth-child(1) { width: 45px !important; }
-            #works-table th:nth-child(2), #works-table td:nth-child(2) { width: 85px !important; }
-            #works-table th:nth-child(3), #works-table td:nth-child(3) { width: auto !important; }
-            #works-table th:nth-child(4), #works-table td:nth-child(4) { width: 50px !important; }
-            #works-table th:nth-child(5), #works-table td:nth-child(5) { width: 50px !important; }
-            #works-table th:nth-child(6), #works-table td:nth-child(6) { width: 50px !important; }
-            #works-table th:nth-child(7), #works-table td:nth-child(7) { width: 50px !important; }
-            #works-table th:nth-child(8), #works-table td:nth-child(8) { width: 80px !important; }
-            #works-table th:nth-child(9), #works-table td:nth-child(9) { width: 120px !important; }
-            #works-table th:nth-child(10), #works-table td:nth-child(10) { width: 75px !important; }
+            /* Print-specific Column Widths (Minimal to give 'Issue' more space) */
+            .works-table th:nth-child(1), .works-table td:nth-child(1) { width: 70px !important; white-space: nowrap !important; }  /* Date */
+            .works-table th:nth-child(2), .works-table td:nth-child(2) { width: 85px !important; }                               /* Equipment */
+            .works-table th:nth-child(3), .works-table td:nth-child(3) { width: auto !important; }                              /* Issue (FLUID) */
+            .works-table th:nth-child(4), .works-table td:nth-child(4) { width: 42px !important; white-space: nowrap !important; }  /* Lead */
+            .works-table th:nth-child(5), .works-table td:nth-child(5) { width: 42px !important; white-space: nowrap !important; }  /* Darn */
+            .works-table th:nth-child(6), .works-table td:nth-child(6) { width: 42px !important; white-space: nowrap !important; }  /* Quote */
+            .works-table th:nth-child(7), .works-table td:nth-child(7) { width: 55px !important; white-space: nowrap !important; }  /* Job # */
+            .works-table th:nth-child(8), .works-table td:nth-child(8) { width: 80px !important; }                               /* Responsibility */
+            .works-table th:nth-child(9), .works-table td:nth-child(9) { width: 80px !important; }                               /* Comment */
+            .works-table th:nth-child(10), .works-table td:nth-child(10) { width: 75px !important; }                              /* Status */
 
-            /* Explicit column widths for Recommendations (6 columns) */
-            #rec-table th:nth-child(1), #rec-table td:nth-child(1) { width: 80px !important; }
-            #rec-table th:nth-child(2), #rec-table td:nth-child(2) { width: 100px !important; }
-            #rec-table th:nth-child(3), #rec-table td:nth-child(3) { width: auto !important; }
-            #rec-table th:nth-child(4), #rec-table td:nth-child(4) { width: 100px !important; }
-            #rec-table th:nth-child(5), #rec-table td:nth-child(5) { width: 150px !important; }
-            #rec-table th:nth-child(6), #rec-table td:nth-child(6) { width: 85px !important; }
-
-            .works-table td { font-size: 7.5pt !important; padding: 6px !important; border: 1px solid #000 !important; }
-            .works-table th { background: #eee !important; color: #000 !important; border: 1px solid #000 !important; font-size: 7pt !important; }
+            .status-badge { padding: 1px 2px !important; font-size: 5pt !important; border: 1px solid #000 !important; background: transparent !important; color: black !important; }
             
-            .meta-cell { border-color: #000 !important; }
-            .meta-row { border-color: #000 !important; }
-            .form-header { border-bottom: 2px solid #000 !important; }
-            .logo-block { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            
-            .status-badge { border: 1px solid #000; padding: 1px 4px; }
+            /* Recommendations Table */
+            #rec-table th, #rec-table td { font-size: 7pt !important; }
+            #rec-table th:nth-child(1) { width: 65px !important; }
         }
+
 
         /* Agent Sidebar Styles */
         .page-layout {
             display: flex;
             gap: 24px;
-            max-width: 1600px;
+            max-width: 100%;
             margin: 0 auto;
             padding: 20px;
         }
@@ -385,16 +391,14 @@
 
 <!-- Control Bar -->
 <div class="control-bar">
-    <div class="brand">REDMEN Fire Protection · <span>simPRO → FPOWS</span></div>
+    <div class="brand"></div>
     <div class="search-row">
-        <div style="display:flex; gap:12px; align-items:center; justify-content:flex-end; flex-wrap:wrap;">
+        <div style="display:flex; gap:12px; align-items:center; justify-content:flex-end; flex-wrap:nowrap;">
             <select id="schedule-select">
                 <option value="">Fetching today's jobs...</option>
             </select>
             <input type="number" id="job-id-input" placeholder="Enter simPRO Job ID…" min="1">
             <button class="btn" id="btn-fetch">🔍 Reload</button>
-        </div>
-        <div style="display:flex; gap:12px; align-items:center; justify-content:flex-end; flex-wrap:wrap;">
             <button class="btn btn-outline" id="btn-publish" style="display:none">Save and Sent to Email</button>
             <button class="btn btn-outline" id="btn-history">📋 History</button>
             <button class="btn btn-outline" id="btn-print" style="display:none">🖨 Print</button>
@@ -448,7 +452,9 @@
 
         <!-- Header -->
         <div class="form-header">
-            <div class="logo-block">REDMEN</div>
+            <div class="logo-block" style="background:none; width:auto; height:auto; padding:0;">
+                <img src="/logo.png" alt="REDMEN Logo" style="height: 100px; width: auto; display: block;">
+            </div>
             <div class="company-info">
                 <strong>Labrobin Pty Ltd</strong><br>
                 T/A Redmen Fire Protection<br>
@@ -460,10 +466,13 @@
             </div>
         </div>
 
-        <!-- Title -->
-        <div class="form-title">
-            <h1>Fire Protection Outstanding Works Status</h1>
-            <h2>Call Sheet – <span>FPOWS</span></h2>
+        <div class="form-title" style="padding: 10px 0 25px;">
+            <h1 style="font-size: 2.2rem; font-weight: 800; color: #1a1a1a; letter-spacing: 1px; text-transform: uppercase; margin: 0;">
+                <span style="color:#e63946">F</span>IRE <span style="color:#e63946">P</span>ROTECTION <span style="color:#e63946">O</span>UTSTANDING <span style="color:#e63946">W</span>ORKS <span style="color:#e63946">S</span>TATUS
+            </h1>
+            <h2 style="font-size: 1.8rem; font-weight: 800; color: #1a1a1a; margin-top: 8px; text-transform: uppercase;">
+                CALL SHEET - <span style="color:#e63946">FPOWS</span>
+            </h2>
         </div>
 
         <!-- Row 1: Date / Client / Site -->
@@ -650,6 +659,7 @@
         const s = (status || '').toLowerCase();
         if (s === 'completed') return '<span class="status-badge s-completed">✔ Completed</span>';
         if (s === 'pending')   return '<span class="status-badge s-pending">⏳ Pending</span>';
+        if (s === 'progress' || s === 'in progress') return '<span class="status-badge s-progress" style="color:#d97706; background:#fef3c7;">🏃 In Progress</span>';
         return '<span class="status-badge s-na">—</span>';
     }
 
@@ -681,13 +691,13 @@
             works.forEach(w => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td style="font-size:0.7rem">${w.Date || ''}</td>
+                    <td class="col-id" style="font-size:0.7rem">${w.Date || ''}</td>
                     <td>${w.EquipmentType || ''}</td>
-                    <td style="font-size:0.72rem; line-height:1.2">${w.Issue || ''}</td>
-                    <td>${w.Lead || ''}</td>
-                    <td>${w.DARN || ''}</td>
-                    <td>${w.Quote || ''}</td>
-                    <td>${w.Job || ''}</td>
+                    <td style="font-size:0.75rem; line-height:1.2">${w.Issue || ''}</td>
+                    <td class="col-id">${w.Lead || ''}</td>
+                    <td class="col-id">${w.DARN || ''}</td>
+                    <td class="col-id">${w.Quote || ''}</td>
+                    <td class="col-id">${w.Job || ''}</td>
                     <td>${w.Responsibility || ''}</td>
                     <td>${w.Comment || ''}</td>
                     <td class="col-status">${badgeHtml(w.Status)}</td>`;
@@ -728,47 +738,66 @@
 
         // 1. Contact Insight
         let contactHtml = '';
-        if (data.SiteContact?.Name && data.SiteContact.Name.toLowerCase() !== data.Client.toLowerCase()) {
+        const sourceMap = {
+            'simpro_direct': 'directly from the simPRO Job record',
+            'description': 'by extracting details from the Job Description',
+            'site_contacts': 'from the simPRO Site Contacts list',
+            'not_found': 'using client details as a fallback'
+        };
+        const src = data.SiteContact?.Source || 'not_found';
+        
+        if (src !== 'not_found') {
             contactHtml = `
                 <div class="insight-card">
                     <h4>👤 Contact Discovery</h4>
-                    <p>I found <strong>${data.SiteContact.Name}</strong> as the primary contact for this job. All phone and email fields have been mapped from their profile.</p>
+                    <p>I found <strong>${data.SiteContact.Name}</strong> ${sourceMap[src]}. All contact fields have been mapped automatically.</p>
                     <span class="tag tag-success">Matched</span>
                 </div>`;
         } else {
              contactHtml = `
                 <div class="insight-card">
                     <h4>⚠️ Contact Check</h4>
-                    <p>No primary contact found. I've used client details as fallback. Verify "Site Contacts" in simPRO.</p>
+                    <p>No primary contact found in the job or description. I've used client details as fallback. Verify "Site Contacts" in simPRO.</p>
                     <span class="tag tag-alert">Review Needed</span>
                 </div>`;
         }
 
         // 2. Quote Insight
         let quoteHtml = '';
-        const hasQuote = data.OutstandingWorks && data.OutstandingWorks.some(w => w.Quote);
-        if (hasQuote) {
+        const works = data.OutstandingWorks || [];
+        const mainWork = works.find(w => w.Quote) || null;
+        
+        if (mainWork) {
+            const qSrc = mainWork.QuoteSource;
+            let qmsg = '';
+            if (qSrc === 'linked') qmsg = 'directly linked in simPRO';
+            else if (qSrc === 'description') qmsg = 'mentioned in the job description';
+            else if (qSrc === 'job_notes') qmsg = 'found in the internal job notes';
+            else if (qSrc === 'comm_notes') qmsg = 'discovered in the communication logs';
+            else qmsg = 'identified in the system';
+
             quoteHtml = `
                 <div class="insight-card">
-                    <h4>💰 Linked Quote</h4>
-                    <p>Great! I detected a linked quote in simPRO UAT. This has been automatically added to the works table.</p>
+                    <h4>💰 Quote Scan</h4>
+                    <p>I detected Quote <strong>${mainWork.Quote}</strong> ${qmsg}. This has been automatically added to the works table.</p>
                     <span class="tag tag-info">Auto-Mapped</span>
                 </div>`;
         } else {
              quoteHtml = `
                 <div class="insight-card">
                     <h4>🔍 Quote Scan</h4>
-                    <p>No linked quote detected for Job #${data.JobID}. If one exists, ensure it's linked in simPRO to see it here.</p>
+                    <p>No linked or mentioned quote detected for Job #${data.JobID}. If one exists, the tech should note it as "Quote #XXXXX" in simPRO.</p>
                     <span class="tag tag-info">Not Found</span>
                 </div>`;
         }
 
         // 3. AFSS Insight
+        const isDefault = data.AFSSDue === "Check simPRO";
         let afssHtml = `
             <div class="insight-card">
                 <h4>📅 AFSS Schedule</h4>
-                <p>The estimated AFSS due date is <strong>${data.AFSSDue}</strong>. confirmar this matches the standard 12-month issuance cycle for Job #${data.JobID}.</p>
-                <span class="tag tag-info">Schedule</span>
+                <p>${isDefault ? 'I could not calculate a reliable AFSS due date. Please <strong>Check simPRO</strong> manually.' : `The estimated AFSS due date is <strong>${data.AFSSDue}</strong>. This matches the standard 12-month issuance cycle for Job #${data.JobID}.`}</p>
+                <span class="tag tag-info">${isDefault ? 'Verify' : 'Schedule'}</span>
             </div>`;
 
         insights.innerHTML = contactHtml + quoteHtml + afssHtml;
@@ -933,20 +962,28 @@
             const serviceMonthYear = $('f-6mo-month').textContent.trim() + ' / ' + $('f-6mo-year').textContent.trim();
             const afss = $('f-afss').textContent.trim();
 
+            const redFirst = (text) => text.split(' ').map(word => `<span style="color:#e63946">${word[0]}</span>${word.slice(1)}`).join(' ');
+
             const headerHtml = `
                 <table width="100%" border="0" cellspacing="0" cellpadding="0" style="border-bottom:2px solid #222; margin-bottom:10px;">
                     <tr>
-                        <td style="padding:15px;"><div style="background:#cc2222;color:white;width:150px;height:50px;text-align:center;line-height:50px;font-size:22px;font-weight:900;letter-spacing:3px;">REDMEN</div></td>
+                        <td style="padding:15px; vertical-align: middle;">
+                            <img src="cid:redmen-logo" alt="REDMEN Logo" style="height: 100px; width: auto; display: block;">
+                        </td>
                         <td align="right" style="padding:15px; font-size:11px; line-height:1.4; color:#555;">
                             <b>Labrobin Pty Ltd</b><br>T/A Redmen Fire Protection<br>ABN 72 079 715 867<br>Phone: 1300 733 836<br>Email: info@redmen.com.au
                         </td>
                     </tr>
                 </table>
-                <div style="text-align:center; padding:15px;">
-                    <h1 style="font-size:18px; margin:0; text-transform:uppercase; letter-spacing:1px;">Fire Protection Outstanding Works Status</h1>
-                    <div style="font-size:13px; color:#666;">Call Sheet - FPOWS</div>
+                <div style="text-align:center; padding:15px; font-family:Arial, sans-serif;">
+                    <h1 style="font-size:22px; margin:0; text-transform:uppercase; letter-spacing:0.5px; font-weight:800; color:#1a1a1a;">
+                        ${redFirst('FIRE PROTECTION OUTSTANDING WORKS STATUS')}
+                    </h1>
+                    <div style="font-size:16px; margin-top:5px; font-weight:700; color:#444;">
+                        CALL SHEET - <span style="color:#e63946">FPOWS</span>
+                    </div>
                 </div>
-                <table width="100%" border="0" cellspacing="0" cellpadding="0" style="border:1px solid #ddd; margin-bottom:20px; font-size:12px;">
+                <table width="100%" border="0" cellspacing="0" cellpadding="0" style="border:1px solid #ddd; margin-bottom:20px; font-size:12px; font-family:Arial, sans-serif;">
                     <tr>
                         <td width="33%" style="padding:10px; border-right:1px solid #ddd; border-bottom:1px solid #ddd;">
                             <div style="font-size:9px; color:#888; text-transform:uppercase;">Date Form Completed</div>
@@ -1002,7 +1039,7 @@
                 if (!hasText) return;
 
                 worksHtml += `<tr>`;
-                [0,1,2,3,4,5,6].forEach(idx => {
+                [0,1,2,3,4,5,6,7,8,9].forEach(idx => {
                     worksHtml += `<td style="padding:8px; border:1px solid #ddd; font-size:11px;">${cells[idx].textContent.trim() || '—'}</td>`;
                 });
                 worksHtml += `</tr>`;
@@ -1026,7 +1063,7 @@
 
             const emailHtml = `
                 <html><body style="font-family: Arial, sans-serif; background-color:#f6f6f6; padding:20px; margin:0;">
-                <div style="max-width:850px; margin:0 auto; background:white; padding:30px; border-radius:8px; box-shadow:0 3px 10px rgba(0,0,0,0.1);">
+                <div style="max-width:1050px; margin:0 auto; background:white; padding:30px; border-radius:8px; box-shadow:0 3px 10px rgba(0,0,0,0.1);">
                     <p style="font-size:11px; color:#888; text-align:center; margin-bottom:20px;">This FPOWS Call Sheet was generated and approved via REDMEN Automation.</p>
                     ${headerHtml}
                     <h3 style="font-size:14px; margin:20px 0 10px; text-transform:uppercase;">Outstanding Works</h3>
@@ -1040,9 +1077,12 @@
                                 <th style="padding:8px; border:1px solid #333; text-align:left;">DARN #</th>
                                 <th style="padding:8px; border:1px solid #333; text-align:left;">Quote #</th>
                                 <th style="padding:8px; border:1px solid #333; text-align:left;">Job #</th>
+                                <th style="padding:8px; border:1px solid #333; text-align:left;">Responsibility</th>
+                                <th style="padding:8px; border:1px solid #333; text-align:left;">Comment</th>
+                                <th style="padding:8px; border:1px solid #333; text-align:left;">Status</th>
                             </tr>
                         </thead>
-                        <tbody>${worksHtml || '<tr><td colspan="7" style="padding:20px; text-align:center; color:#999;">No works listed.</td></tr>'}</tbody>
+                        <tbody>${worksHtml || '<tr><td colspan="10" style="padding:20px; text-align:center; color:#999;">No works listed.</td></tr>'}</tbody>
                     </table>
                     
                     <h3 style="font-size:14px; margin:20px 0 10px; text-transform:uppercase;">Recommendations Made to Client</h3>
