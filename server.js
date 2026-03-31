@@ -162,12 +162,72 @@ const fetchFpowData = async (jobId) => {
                             }
                         }
                         
-                        const descFormatted = (dj.Description || "")
-                            .replace(/<br\s*\/?>/gi, '\n')
-                            .replace(/<\/p>|<\/div>/gi, '\n')
-                            .replace(/<[^>]+>/g, '')
-                            .replace(/[ \t]+/g, ' ')
-                            .trim();
+                        // CLIENT POV DISTILLER: Extract the core task and notes, hide the template boilerplate
+                        function cleanDescriptionForClient(desc) {
+                            if (!desc) return "Standard maintenance and inspection.";
+                            
+                            // 1. Initial cleanup
+                            const clean = desc.replace(/<br\s*\/?>/gi, '\n')
+                                              .replace(/<\/p>|<\/div>/gi, '\n')
+                                              .replace(/<[^>]+>/g, '')
+                                              .replace(/[ \t]+/g, ' ')
+                                              .trim();
+                            
+                            // 2. Split into lines and filter
+                            const lines = clean.split('\n').map(l => l.trim()).filter(Boolean);
+                            const filtered = lines.filter(line => {
+                                // Ignore standard Redmen boilerplate lines
+                                const p = line.toLowerCase();
+                                if (p.startsWith('techs attending:')) return false;
+                                if (p.startsWith('attendance confirmed')) return false;
+                                if (p.startsWith('name:')) return false;
+                                if (p.startsWith('phone')) return false; // Catches 'Phone Number:'
+                                if (p.startsWith('email:')) return false;
+                                if (p.startsWith('address:')) return false;
+                                if (p.startsWith('site address:')) return false;
+                                if (p.startsWith('site:')) return false;
+                                if (p.startsWith('contact:')) return false;
+                                if (p.includes('my link ly')) return false; // Common template name
+                                if (p.includes('******quote number:')) return false;
+                                if (p.startsWith('scheduled time:')) return false;
+                                if (p.startsWith('scheduled date:')) return false;
+                                if (p.startsWith('osa name:')) return false;
+                                if (p.startsWith('access instructions:')) return false;
+                                if (p.startsWith('materials / specialty tools')) return false;
+                                if (p.startsWith('materials location:')) return false;
+                                if (p.includes('redmen fire protection scope of works')) return false;
+                                if (p.includes('qualified technician to attend')) return false;
+                                if (p.includes('as/nz 1668')) return false;
+                                if (p.includes('bca ci part e2')) return false;
+                                if (p.includes('witness testing of essential fans')) return false;
+                                if (p.includes('operation checks of mechanical equipment')) return false;
+                                if (p.includes('reporting and certification')) return false;
+                                if (p.includes('sell price:')) return false;
+                                if (p.includes('quoted by:')) return false;
+                                if (p.includes('requested by:')) return false;
+                                if (p === 'scope of works:') return false;
+                                return true;
+                            });
+
+                            // 3. Join back with nice formatting
+                            if (filtered.length === 0) return "General Fire Safety Inspection / Routine Testing";
+                            
+                            // Limit to 15 lines max to keep the table manageable
+                            return filtered.slice(0, 15).join('\n');
+                        }
+
+                        const rawDesc = (dj.Description || "");
+                        const descFormatted = cleanDescriptionForClient(rawDesc);
+                        
+                        // Determine a professional [STATUS] for the client POV
+                        let displayStatus = 'PENDING';
+                        if (dj.Stage) {
+                            const stage = dj.Stage.toLowerCase();
+                            if (stage.includes('progress')) displayStatus = 'IN PROGRESS';
+                            if (stage.includes('complete')) displayStatus = 'COMPLETED';
+                        }
+                        if (rawDesc.toLowerCase().includes('scheduled for')) displayStatus = 'SCHEDULED';
+
                         
                         let sq = dj.Quote ? dj.Quote.ID : "";
 
@@ -268,6 +328,7 @@ const fetchFpowData = async (jobId) => {
                             Date: dj.DateIssued ? new Date(dj.DateIssued).toLocaleDateString('en-AU') : "",
                             EquipmentType: eqType,
                             Issue: descFormatted,
+                            DisplayStatus: displayStatus,
                             Lead: leadVal ? `#${leadVal}` : "",
                             LeadSource: leadSource,
                             DARN: darnVal, 
@@ -294,16 +355,19 @@ const fetchFpowData = async (jobId) => {
                     }
                     
                     let qLead = q.Lead ? q.Lead.ID : "";
+                    const qDesc = cleanDescriptionForClient(q.Description || "");
+                    
                     outstandingWorks.push({
                         Date: q.DateIssued ? new Date(q.DateIssued).toLocaleDateString('en-AU') : "",
                         EquipmentType: "Quote/Work Needed",
-                        Issue: (q.Description || "")
-                            .replace(/<br\s*\/?>/gi, '\n')
-                            .replace(/<\/p>|<\/div>/gi, '\n')
-                            .replace(/<[^>]+>/g, '')
-                            .replace(/[ \t]+/g, ' ')
-                            .trim(),
-                        Lead: qLead ? `#${qLead}` : "", DARN: "", Quote: q.ID ? `#${q.ID}` : "", Job: "", Comment: "", Status: q.Stage || "pending"
+                        Issue: qDesc,
+                        DisplayStatus: "QUOTED",
+                        Lead: qLead ? `#${qLead}` : "", 
+                        DARN: "", 
+                        Quote: q.ID ? `#${q.ID}` : "", 
+                        Job: "", 
+                        Comment: "", 
+                        Status: q.Stage || "pending"
                     });
                 }
             }
@@ -401,17 +465,20 @@ hApp.get('/api/schedules/today', async (req, res) => {
 
 // Email endpoint
 hApp.post('/api/send-email', async (req, res) => {
-    console.log('[POST] /api/send-email - received request');
     try {
         const { jobId, recipientEmail, managerEmail, htmlContent, subject, clientName } = req.body;
-        console.log(`[EMAIL] Job #${jobId} -> ${recipientEmail}, Manager: ${managerEmail}`);
+        const payloadSize = JSON.stringify(req.body).length;
+        console.log(`[POST] /api/send-email - Payload: ${Math.round(payloadSize/1024)}KB`);
+        console.log(`[EMAIL] Job #${jobId} -> To: ${recipientEmail}, CC: ${managerEmail || MANAGER_EMAIL}`);
 
         const transporter = getTransporter();
         if (!transporter) {
-            return res.status(500).json({ error: 'Email not configured. Set SMTP_USER and SMTP_PASS in environment.' });
+            console.error('[SMTP ERROR] Transporter not initialized. Check SMTP_USER/PASS.');
+            return res.status(500).json({ error: 'Email delivery not configured. Check server logs.' });
         }
 
-        if (!recipientEmail && !managerEmail) {
+        if (!recipientEmail && !managerEmail && !MANAGER_EMAIL) {
+            console.warn('[EMAIL WARN] No recipient email addresses provided or found in env.');
             return res.status(400).json({ error: 'No recipient email addresses provided.' });
         }
 
