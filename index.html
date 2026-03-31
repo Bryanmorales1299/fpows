@@ -1040,6 +1040,7 @@
                 <input type="number" id="job-id-input" placeholder="Enter simPRO Job ID…" min="1">
                 <button class="btn" id="btn-fetch">🔍 Reload</button>
                 <button class="btn btn-outline" id="btn-publish" style="display:none">Save and Sent to Email</button>
+                <button class="btn btn-outline" id="btn-search-customers">🔍 Search Customers</button>
                 <button class="btn btn-outline" id="btn-history">📋 History</button>
                 <button class="btn btn-outline" id="btn-print" style="display:none">🖨 Print</button>
             </div>
@@ -1071,6 +1072,85 @@
 
             <div class="email-modal-actions">
                 <button class="btn-cancel" id="btn-history-close">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customer Search Modal -->
+    <style>
+        .customer-result-item {
+            padding: 12px 14px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .customer-result-item:hover {
+            background: #fdfdfd;
+            border-left: 3px solid var(--accent);
+        }
+        .customer-name {
+            font-weight: 600;
+            color: #1a1a2e;
+            font-size: 0.9rem;
+        }
+        .customer-type {
+            font-size: 0.75rem;
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #666;
+        }
+        .job-item {
+            padding: 10px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #fafafa;
+        }
+        .job-item:hover {
+            border-color: var(--accent);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            transform: translateY(-1px);
+        }
+        .job-item-header {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 4px;
+            font-size: 0.85rem;
+        }
+        .job-item-site {
+            font-size: 0.8rem;
+            color: #666;
+        }
+        .job-item-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #888;
+            margin-top: 4px;
+        }
+    </style>
+    <div class="email-modal-overlay" id="customer-modal-overlay">
+        <div class="email-modal" style="width: 700px; max-width: 95vw; max-height: 90vh; display: flex; flex-direction: column;">
+            <h2 id="cs-title">🔍 Search Customers</h2>
+            <p class="subtitle" id="cs-subtitle">Look up a customer and view their recent jobs</p>
+
+            <!-- Search Input View -->
+            <div id="cs-search-view" style="flex:1;">
+                <input type="text" id="cs-input" placeholder="Type customer name to search..." autocomplete="off">
+                <div id="cs-status" style="margin-top: 10px; font-size: 0.8rem; color: #666; min-height: 20px;"></div>
+                <div id="cs-results" style="margin-top: 10px; max-height: 500px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; display: none;"></div>
+            </div>
+
+            <div class="email-modal-actions" style="margin-top: auto; padding-top: 20px;">
+                <button class="btn-cancel" id="btn-cs-close">Close</button>
             </div>
         </div>
     </div>
@@ -1498,6 +1578,118 @@
         $('btn-history-close').addEventListener('click', () => {
             $('history-modal-overlay').classList.remove('visible');
         });
+
+        // --- Customer Search Logic ---
+        $('btn-search-customers').addEventListener('click', () => {
+            $('customer-modal-overlay').classList.add('visible');
+            $('cs-input').focus();
+            if (!$('cs-input').value.trim()) {
+                fetchCustomers('');
+            }
+        });
+
+        $('btn-cs-close').addEventListener('click', () => {
+            $('customer-modal-overlay').classList.remove('visible');
+        });
+
+        async function fetchCustomers(q) {
+            $('cs-status').textContent = q ? 'Searching...' : 'Loading recent customers...';
+            try {
+                const res = await fetch('/api/customers/search?q=' + encodeURIComponent(q));
+                const data = await res.json();
+                const resultsBox = $('cs-results');
+                if (data.results && data.results.length > 0) {
+                    resultsBox.style.display = 'block';
+                    $('cs-status').textContent = q ? `Found ${data.results.length} result(s)` : `Showing ${data.results.length} recent customers. Type to search...`;
+                    resultsBox.innerHTML = data.results.map(c => `
+                        <div class="customer-result-container">
+                            <div class="customer-result-item" onclick="loadCustomerJobs('${c.id}', this)" style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #eee;">
+                                <span class="customer-name">
+                                    <span class="customer-expander" style="display:inline-block; width:15px; color:var(--accent);">▸</span>
+                                    ${c.name} <span style="font-size:0.8em;color:#999;font-weight:normal;">(ID: ${c.id})</span>
+                                </span>
+                                <span class="customer-type">${c.type}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    resultsBox.style.display = 'none';
+                    $('cs-status').textContent = 'No customers found.';
+                }
+            } catch (err) {
+                $('cs-status').textContent = 'Error loading customers.';
+            }
+        }
+
+        let csTimeout;
+        $('cs-input').addEventListener('input', (e) => {
+            clearTimeout(csTimeout);
+            const q = e.target.value.trim();
+            if (q.length > 0 && q.length < 2) {
+                $('cs-results').style.display = 'none';
+                $('cs-status').textContent = 'Type at least 2 characters...';
+                return;
+            }
+            csTimeout = setTimeout(() => fetchCustomers(q), 400);
+        });
+
+        async function loadCustomerJobs(custId, rowElem) {
+            let container = rowElem.nextElementSibling;
+            const expander = rowElem.querySelector('.customer-expander');
+            
+            if (container && container.classList.contains('customer-jobs-inline')) {
+                // toggle
+                if (container.style.display === 'none') {
+                    container.style.display = 'block';
+                    if (expander) expander.textContent = '▾';
+                } else {
+                    container.style.display = 'none';
+                    if (expander) expander.textContent = '▸';
+                }
+                return;
+            }
+
+            // Create container
+            if (expander) expander.textContent = '▾';
+            container = document.createElement('div');
+            container.className = 'customer-jobs-inline';
+            container.style.background = '#fcfcfc';
+            container.style.borderBottom = '1px solid #eee';
+            container.style.padding = '10px 15px';
+            container.innerHTML = '<div style="padding:15px;text-align:center;color:#666;font-size:0.9rem;">Loading priority jobs...</div>';
+            rowElem.parentNode.insertBefore(container, rowElem.nextSibling);
+
+            try {
+                const res = await fetch('/api/customers/' + custId + '/jobs');
+                const data = await res.json();
+                
+                if (data.jobs && data.jobs.length > 0) {
+                    container.innerHTML = data.jobs.map(j => `
+                        <div class="job-item" onclick="selectJobFromSearch('${j.id}')">
+                            <div class="job-item-header">
+                                <span>${j.name}</span>
+                                <span style="color:var(--accent);">#${j.id}</span>
+                            </div>
+                            <div class="job-item-site">📍 ${j.site}</div>
+                            <div class="job-item-meta">
+                                <span>Status: <strong style="color:var(--accent);">${j.stage}</strong></span>
+                                <span>📅 ${j.date}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<div style="padding:15px;text-align:center;color:#666;font-size:0.9rem;">No Active or Pending jobs found.</div>';
+                }
+            } catch (err) {
+                container.innerHTML = '<div style="padding:15px;text-align:center;color:red;font-size:0.9rem;">Error loading jobs.</div>';
+            }
+        }
+
+        function selectJobFromSearch(jobId) {
+            $('customer-modal-overlay').classList.remove('visible');
+            $('job-id-input').value = jobId;
+            fetchJob();
+        }
 
         async function deleteHistoryItem(timestamp) {
             if (!confirm("Are you sure you want to delete this record?")) return;

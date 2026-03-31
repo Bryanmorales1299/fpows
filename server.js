@@ -463,6 +463,86 @@ hApp.get('/api/schedules/today', async (req, res) => {
     }
 });
 
+let activeCustomersCache = null;
+let activeCustomersCacheTime = 0;
+
+// Customer Search endpoint
+hApp.get('/api/customers/search', async (req, res) => {
+    const q = (req.query.q || '').trim();
+    if (q.length > 0 && q.length < 2) return res.json({ results: [] });
+    console.log(`[GET] /api/customers/search?q=${q}`);
+    try {
+        // Cache valid for 60 seconds to prevent hammering simPRO API
+        if (!activeCustomersCache || (Date.now() - activeCustomersCacheTime) > 60000) {
+            console.log(`[SIMPRO API] Refreshing Active Customers Cache via Jobs endpoint...`);
+            
+            // 1. Fetch recent Pending and InProgress jobs
+            const pendingRes = await getSimpro(`/api/v1.0/companies/${COMPANY_ID}/jobs/?Stage=Pending&pageSize=150&orderby=-ID&columns=Customer`);
+            const inProgRes = await getSimpro(`/api/v1.0/companies/${COMPANY_ID}/jobs/?Stage=Progress&pageSize=150&orderby=-ID&columns=Customer`);
+            
+            const allActiveJobs = [...(pendingRes.data || []), ...(inProgRes.data || [])];
+            
+            // 2. Extract unique Customers from those active jobs
+            const uniqueMap = new Map();
+            allActiveJobs.forEach(job => {
+                if (job.Customer && job.Customer.ID) {
+                    uniqueMap.set(job.Customer.ID, {
+                        id: String(job.Customer.ID),
+                        name: job.Customer.CompanyName || 'Unnamed',
+                        type: 'Company'
+                    });
+                }
+            });
+            activeCustomersCache = Array.from(uniqueMap.values());
+            activeCustomersCacheTime = Date.now();
+        }
+        
+        // 3. Perform Case-Insensitive Name Search
+        let filtered = activeCustomersCache;
+        if (q.length >= 2) {
+            const lowerQ = q.toLowerCase();
+            filtered = activeCustomersCache.filter(c => c.name.toLowerCase().includes(lowerQ));
+        }
+        
+        // Return top 15 results
+        const results = filtered.slice(0, 15);
+        res.json({ results });
+    } catch (err) {
+        console.error(`[CUSTOMER SEARCH ERROR] ${err.message}`);
+        res.json({ results: [], error: err.message });
+    }
+});
+
+// Customer Jobs endpoint (get jobs for a specific customer)
+hApp.get('/api/customers/:id/jobs', async (req, res) => {
+    const custId = req.params.id;
+    console.log(`[GET] /api/customers/${custId}/jobs`);
+    try {
+        const jobsRes = await getSimpro(`/api/v1.0/companies/${COMPANY_ID}/jobs/?Customer.ID=${custId}&pageSize=30&orderby=-ID&columns=ID,Name,Site,Stage,DateIssued`);
+        
+        const validStages = ['Pending', 'Progress'];
+        const jobs = (jobsRes.data || [])
+            .filter(j => validStages.includes(j.Stage))
+            .map(j => ({
+                id: j.ID,
+                name: j.Name || `Job #${j.ID}`,
+                site: j.Site?.Name || 'Unknown Site',
+                stage: j.Stage === 'Progress' ? 'In Progress' : j.Stage,
+                date: j.DateIssued ? new Date(j.DateIssued).toLocaleDateString('en-AU') : '—'
+            }))
+            .sort((a, b) => {
+                if (a.stage === 'In Progress' && b.stage !== 'In Progress') return -1;
+                if (b.stage === 'In Progress' && a.stage !== 'In Progress') return 1;
+                return b.id - a.id;
+            });
+            
+        res.json({ jobs });
+    } catch (err) {
+        console.error(`[CUSTOMER JOBS ERROR] ${err.message}`);
+        res.json({ jobs: [], error: err.message });
+    }
+});
+
 // Email endpoint
 hApp.post('/api/send-email', async (req, res) => {
     try {
