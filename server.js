@@ -141,13 +141,17 @@ const fetchFpowData = async (jobId) => {
         } catch (e) {}
     }
 
-    // 4. Site-Wide Aggregation
+    // 4. Site-Wide Aggregation (Filtered by Customer to prevent cross-account confusion)
     const siteId = jobData.Site ? jobData.Site.ID : null;
+    const customerId = jobData.Customer ? jobData.Customer.ID : null;
     const outstandingWorks = [];
 
     if (siteId) {
         try {
-            const jobsRes = await getSimpro(`/api/v1.0/companies/${COMPANY_ID}/jobs/?Site.ID=${siteId}&pageSize=50`);
+            let siteJobsUrl = `/api/v1.0/companies/${COMPANY_ID}/jobs/?Site.ID=${siteId}&pageSize=50`;
+            if (customerId) siteJobsUrl += `&Customer.ID=${customerId}`;
+            
+            const jobsRes = await getSimpro(siteJobsUrl);
             if (jobsRes.data && jobsRes.data.length > 0) {
                 const jobDetails = await Promise.all(jobsRes.data.map(async (j) => {
                     try {
@@ -344,7 +348,10 @@ const fetchFpowData = async (jobId) => {
                 outstandingWorks.push(...jobDetails.filter(d => d !== null));
             }
 
-            const quotesRes = await getSimpro(`/api/v1.0/companies/${COMPANY_ID}/quotes/?Site.ID=${siteId}&pageSize=50`);
+            let siteQuotesUrl = `/api/v1.0/companies/${COMPANY_ID}/quotes/?Site.ID=${siteId}&pageSize=50`;
+            if (customerId) siteQuotesUrl += `&Customer.ID=${customerId}`;
+
+            const quotesRes = await getSimpro(siteQuotesUrl);
             if (quotesRes.data && quotesRes.data.length > 0) {
                 for (const q of quotesRes.data) {
                     if (q.Stage) {
@@ -476,9 +483,9 @@ hApp.get('/api/customers/search', async (req, res) => {
         if (!activeCustomersCache || (Date.now() - activeCustomersCacheTime) > 60000) {
             console.log(`[SIMPRO API] Refreshing Active Customers Cache via Jobs endpoint...`);
             
-            // 1. Fetch recent Pending and InProgress jobs
-            const pendingRes = await getSimpro(`/api/v1.0/companies/${COMPANY_ID}/jobs/?Stage=Pending&pageSize=150&orderby=-ID&columns=Customer`);
-            const inProgRes = await getSimpro(`/api/v1.0/companies/${COMPANY_ID}/jobs/?Stage=Progress&pageSize=150&orderby=-ID&columns=Customer`);
+            // 1. Fetch recent Pending and InProgress jobs (Increased limit to 250)
+            const pendingRes = await getSimpro(`/api/v1.0/companies/${COMPANY_ID}/jobs/?Stage=Pending&pageSize=250&orderby=-ID&columns=Customer`);
+            const inProgRes = await getSimpro(`/api/v1.0/companies/${COMPANY_ID}/jobs/?Stage=Progress&pageSize=250&orderby=-ID&columns=Customer`);
             
             const allActiveJobs = [...(pendingRes.data || []), ...(inProgRes.data || [])];
             
@@ -504,8 +511,8 @@ hApp.get('/api/customers/search', async (req, res) => {
             filtered = activeCustomersCache.filter(c => c.name.toLowerCase().includes(lowerQ));
         }
         
-        // Return top 15 results
-        const results = filtered.slice(0, 15);
+        // Return top 50 results
+        const results = filtered.slice(0, 50);
         res.json({ results });
     } catch (err) {
         console.error(`[CUSTOMER SEARCH ERROR] ${err.message}`);
