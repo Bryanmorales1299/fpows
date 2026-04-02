@@ -575,8 +575,8 @@
 
         @media print {
             @page {
-                margin: 0.5cm;
-                size: portrait;
+                margin: 0.4cm;
+                size: landscape;
             }
 
             .control-bar,
@@ -584,6 +584,7 @@
             #error-banner,
             #loading-overlay,
             #agent-sidebar,
+            .agent-sidebar,
             .email-modal-overlay,
             #chat-trigger,
             #chat-window {
@@ -594,7 +595,7 @@
                 background: white;
                 padding: 0;
                 margin: 0;
-                font-size: 9pt;
+                font-size: 10pt;
             }
 
             .page-wrapper {
@@ -605,54 +606,106 @@
                 display: block !important;
             }
 
+            .page-layout {
+                display: block !important;
+            }
+
             #fpows-form {
                 box-shadow: none !important;
-                border: none !important;
+                border: 1px solid #ccc !important;
                 width: 100% !important;
                 padding: 0 !important;
                 margin: 0 !important;
+                border-radius: 0 !important;
+            }
+
+            .form-header {
+                padding: 16px 20px !important;
+            }
+
+            .form-header img {
+                height: 70px !important;
+            }
+
+            .form-title h1 {
+                font-size: 1.6rem !important;
+            }
+
+            .form-title h2 {
+                font-size: 1.2rem !important;
+            }
+
+            .meta-cell .lbl {
+                font-size: 0.6rem !important;
+            }
+
+            .meta-cell .val {
+                font-size: 0.8rem !important;
             }
 
             .works-table {
                 width: 100% !important;
-                table-layout: auto !important;
+                table-layout: fixed !important;
                 border-collapse: collapse !important;
             }
 
             .works-table th,
             .works-table td {
-                font-size: 7pt !important;
-                padding: 4px 3px !important;
-                border: 1px solid #000 !important;
+                font-size: 8pt !important;
+                padding: 8px 6px !important;
+                border: 1px solid #ccc !important;
+                word-wrap: break-word !important;
             }
 
-            /* Print-specific Column Widths (Minimal to give 'Issue' more space) */
-            .works-table th:nth-child(1), .works-table td:nth-child(1) { width: 85px !important; }  /* Date + Status */
-            .works-table th:nth-child(2), .works-table td:nth-child(2) { width: 85px !important; }                               /* Equipment */
-            .works-table th:nth-child(3), .works-table td:nth-child(3) { width: auto !important; }                              /* Issue (FLUID) */
-            .works-table th:nth-child(4), .works-table td:nth-child(4) { width: 42px !important; white-space: nowrap !important; }  /* Lead */
-            .works-table th:nth-child(5), .works-table td:nth-child(5) { width: 42px !important; white-space: nowrap !important; }  /* Darn */
-            .works-table th:nth-child(6), .works-table td:nth-child(6) { width: 42px !important; white-space: nowrap !important; }  /* Quote */
-            .works-table th:nth-child(7), .works-table td:nth-child(7) { width: 55px !important; white-space: nowrap !important; }  /* Job # */
-            .works-table th:nth-child(8), .works-table td:nth-child(8) { width: 80px !important; }                               /* Responsibility */
-            .works-table th:nth-child(9), .works-table td:nth-child(9) { width: 80px !important; }                               /* Comment */
+            .works-table th {
+                background: #2c2c2c !important;
+                color: #fff !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            /* Print Column Widths - matching the dashboard proportions */
+            .works-table th:nth-child(1), .works-table td:nth-child(1) { width: 11% !important; }  /* Date + Status */
+            .works-table th:nth-child(2), .works-table td:nth-child(2) { width: 11% !important; }  /* Equipment */
+            .works-table th:nth-child(3), .works-table td:nth-child(3) { width: auto !important; }  /* Issue (FLUID) */
+            .works-table th:nth-child(4), .works-table td:nth-child(4) { width: 6% !important; white-space: nowrap !important; }  /* Lead */
+            .works-table th:nth-child(5), .works-table td:nth-child(5) { width: 5% !important; white-space: nowrap !important; }  /* Darn */
+            .works-table th:nth-child(6), .works-table td:nth-child(6) { width: 6% !important; white-space: nowrap !important; }  /* Quote */
+            .works-table th:nth-child(7), .works-table td:nth-child(7) { width: 7% !important; white-space: nowrap !important; }  /* Job # */
+            .works-table th:nth-child(8), .works-table td:nth-child(8) { width: 10% !important; }  /* Responsibility */
+            .works-table th:nth-child(9), .works-table td:nth-child(9) { width: 9% !important; }   /* Comment */
+
+            .works-table tr:nth-child(even) td {
+                background: #f9f9f9 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
 
             .status-badge {
-                padding: 1px 2px !important;
-                font-size: 5pt !important;
-                border: 1px solid #000 !important;
-                background: transparent !important;
-                color: black !important;
+                padding: 2px 6px !important;
+                font-size: 6pt !important;
+                border: 1px solid #999 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
 
             /* Recommendations Table */
             #rec-table th,
             #rec-table td {
-                font-size: 7pt !important;
+                font-size: 8pt !important;
+                padding: 8px 6px !important;
             }
 
             #rec-table th:nth-child(1) {
-                width: 65px !important;
+                width: 10% !important;
+            }
+
+            .rec-title {
+                font-size: 0.85rem !important;
+            }
+
+            .footer-row {
+                font-size: 0.75rem !important;
             }
         }
 
@@ -1023,6 +1076,71 @@
             border-radius: 4px;
             padding: 2px 4px;
         }
+
+        /* Presence Indicators */
+        .presence-container {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-left: 8px;
+        }
+        .presence-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            border: 2px solid rgba(255,255,255,0.3);
+            position: relative;
+            cursor: default;
+            animation: presencePop 0.3s ease;
+        }
+        .presence-avatar .pulse-dot {
+            position: absolute;
+            bottom: -1px;
+            right: -1px;
+            width: 10px;
+            height: 10px;
+            background: #2ecc71;
+            border-radius: 50%;
+            border: 2px solid var(--dark);
+            animation: pulse-live 2s infinite;
+        }
+        .presence-avatar .tooltip {
+            display: none;
+            position: absolute;
+            bottom: -28px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #222;
+            color: #fff;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            white-space: nowrap;
+            z-index: 10;
+        }
+        .presence-avatar:hover .tooltip {
+            display: block;
+        }
+        @keyframes presencePop {
+            from { transform: scale(0); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        @keyframes pulse-live {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        .presence-label {
+            font-size: 0.72rem;
+            color: rgba(255,255,255,0.5);
+            font-weight: 500;
+        }
     </style>
 </head>
 
@@ -1046,6 +1164,7 @@
                 <input type="number" id="job-id-input" style="display:none">
             </div>
         </div>
+        <div id="presence-bar" class="presence-container" style="display:none;"></div>
         <div id="status-pill" class="status-pill pill-waiting">⏳ Search for a job</div>
     </div>
 
@@ -1757,6 +1876,9 @@
                 $('agent-insights').innerHTML = '<div class="insight-card"><h4>📋 Job #' + jobId + '</h4><p>' + (data.Client || 'Unknown') + ' — ' + (data.Site || 'Unknown') + '</p></div><div class="insight-card"><h4>🔧 Outstanding Works</h4><p>' + works.length + ' item(s) found</p></div><div class="insight-card"><h4>📅 AFSS Due</h4><p>' + (data.AFSSDue || 'Not set') + '</p></div>';
 
                 speak('Job #' + jobId + ' loaded! Client: ' + data.Client + '. ' + works.length + ' outstanding works found.', 'Want me to verify the data?', 'fetch');
+
+                // Start live presence tracking for this job
+                startPresence(jobId);
             } catch (err) {
                 console.error("Fetch error:", err);
                 showError('Failed to load Job #' + jobId + ': ' + err.message);
@@ -2108,6 +2230,8 @@
                     const works = data.OutstandingWorks || [];
                     $('agent-insights').innerHTML = '<div class="insight-card"><h4>📋 Job #' + jobId + '</h4><p>' + (data.Client || 'Unknown') + ' — ' + (data.Site || 'Unknown') + '</p></div><div class="insight-card"><h4>🔧 Outstanding Works</h4><p>' + works.length + ' item(s) found</p></div><div class="insight-card"><h4>📅 AFSS Due</h4><p>' + (data.AFSSDue || 'Not set') + '</p></div>';
 
+                    // Start live presence tracking for this job
+                    startPresence(jobId);
                     // Build a clean, concise summary for the chat
                     const contact = data.SiteContact || {};
                     let summary = `<strong>✅ Job #${jobId} — Successfully Loaded</strong><br><br>`;
@@ -2323,6 +2447,7 @@
         document.addEventListener("DOMContentLoaded", () => {
             initSchedules();
             new FPOWSChatbot();
+            initPresence();
         });
 
         // Add handleSpeak to the class
@@ -2330,6 +2455,72 @@
             this.context.lastIntent = intent;
             this.addMessage(`${res} <br><br><em>${followUp}</em>`, 'bot');
         };
+
+        // --- Live Presence System ---
+        let _presenceUser = localStorage.getItem('fpows_username') || '';
+        let _presenceInterval = null;
+        let _presencePollInterval = null;
+        let _currentViewingJobId = null;
+
+        function initPresence() {
+            if (!_presenceUser) {
+                _presenceUser = prompt('Enter your display name for the FPOWS dashboard:');
+                if (_presenceUser) {
+                    _presenceUser = _presenceUser.trim();
+                    localStorage.setItem('fpows_username', _presenceUser);
+                }
+            }
+        }
+
+        function getInitials(name) {
+            return name.split(' ').map(w => w[0]).join('').toUpperCase().substring(0, 2);
+        }
+
+        function startPresence(jobId) {
+            if (_presenceInterval) clearInterval(_presenceInterval);
+            if (_presencePollInterval) clearInterval(_presencePollInterval);
+            
+            // Leave previous job
+            if (_currentViewingJobId && _presenceUser) {
+                fetch('/api/presence/leave', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ jobId: _currentViewingJobId, userName: _presenceUser }) });
+            }
+            _currentViewingJobId = String(jobId);
+            if (!_presenceUser) return;
+
+            // Heartbeat every 5 seconds
+            const heartbeat = () => fetch('/api/presence/heartbeat', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ jobId: _currentViewingJobId, userName: _presenceUser }) });
+            heartbeat();
+            _presenceInterval = setInterval(heartbeat, 5000);
+
+            // Poll viewers every 5 seconds
+            const pollViewers = async () => {
+                try {
+                    const res = await fetch('/api/presence/' + _currentViewingJobId);
+                    const data = await res.json();
+                    renderPresence(data.viewers || []);
+                } catch(e) {}
+            };
+            pollViewers();
+            _presencePollInterval = setInterval(pollViewers, 5000);
+        }
+
+        function renderPresence(viewers) {
+            const bar = $('presence-bar');
+            if (!viewers || viewers.length === 0) {
+                bar.style.display = 'none';
+                return;
+            }
+            bar.style.display = 'flex';
+            bar.innerHTML = '<span class="presence-label">👁 Viewing:</span>' +
+                viewers.map(v => `<div class="presence-avatar" style="background:${v.color}">${getInitials(v.name)}<span class="pulse-dot"></span><span class="tooltip">${v.name}</span></div>`).join('');
+        }
+
+        // Leave on page close
+        window.addEventListener('beforeunload', () => {
+            if (_currentViewingJobId && _presenceUser) {
+                navigator.sendBeacon('/api/presence/leave', JSON.stringify({ jobId: _currentViewingJobId, userName: _presenceUser }));
+            }
+        });
     </script>
 </body>
 
