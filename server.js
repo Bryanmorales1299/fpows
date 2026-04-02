@@ -31,6 +31,67 @@ const SMTP_USER = cleanEnv(process.env.SMTP_USER);
 const SMTP_PASS = cleanEnv(process.env.SMTP_PASS);
 const MANAGER_EMAIL = cleanEnv(process.env.MANAGER_EMAIL);
 
+/**
+ * Background Service: Sync Asset Service Dates back to simPRO
+ * This ensures that when a job is processed, the next service date is automatically set in the DB.
+ */
+async function syncAssetDates(siteId, jobDate, jobType) {
+    if (!siteId) return;
+    
+    try {
+        console.log(`[AUTO-SYNC] Starting asset sync for Site #${siteId} (Type: ${jobType}, Date: ${jobDate})`);
+        
+        // 1. Calculate the Target Next Date
+        const baseDate = new Date(jobDate);
+        if (isNaN(baseDate.getTime())) return;
+        
+        // Move to the same day next cycle
+        if (jobType === "12 Monthly") {
+            baseDate.setFullYear(baseDate.getFullYear() + 1);
+        } else {
+            baseDate.setMonth(baseDate.getMonth() + 6);
+        }
+        
+        // Format to YYYY-MM-DD for simPRO
+        const nextDateStr = baseDate.toISOString().split('T')[0];
+        console.log(`[AUTO-SYNC] Target Next Date: ${nextDateStr}`);
+
+        // 2. Fetch Assets for this Site
+        const assetsRes = await getSimpro(`/api/v1.0/companies/${COMPANY_ID}/sites/${siteId}/assets/`);
+        if (!assetsRes.data || assetsRes.data.length === 0) return;
+
+        for (const asset of assetsRes.data) {
+            try {
+                // 3. Fetch Service Levels for each asset
+                const slRes = await getSimpro(`/api/v1.0/companies/${COMPANY_ID}/assets/${asset.ID}/serviceLevels/`);
+                if (!slRes.data) continue;
+
+                for (const sl of slRes.data) {
+                    const slName = (sl.Name || "").toLowerCase();
+                    const isAnnualMatch = jobType === "12 Monthly" && (slName.includes("annual") || slName.includes("12 month"));
+                    const is6MonthMatch = jobType === "6 Monthly" && (slName.includes("6 month"));
+
+                    if (isAnnualMatch || is6MonthMatch) {
+                        // 4. Update if the date is different (Safety check: also ensuring we don't move backwards)
+                        if (sl.NextDate !== nextDateStr) {
+                            console.log(`[AUTO-SYNC] Updating Asset #${asset.ID} Service Level #${sl.ID} to ${nextDateStr}`);
+                            await axios.patch(`${process.env.SIMPRO_BASE_URL}/api/v1.0/companies/${COMPANY_ID}/assets/${asset.ID}/serviceLevels/${sl.ID}/`, 
+                                { NextDate: nextDateStr },
+                                { headers: { 'Authorization': `Bearer ${process.env.SIMPRO_ACCESS_TOKEN}` } }
+                            );
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error(`[AUTO-SYNC ERROR] Failed asset #${asset.ID}: ${e.message}`);
+            }
+        }
+        console.log(`[AUTO-SYNC] Completed for Site #${siteId}`);
+    } catch (err) {
+        console.error(`[AUTO-SYNC CRITICAL ERROR]: ${err.message}`);
+    }
+}
+
 if (!SIMPRO_BASE_URL || !SIMPRO_ACCESS_TOKEN) {
     console.error("[CRITICAL] Missing SIMPRO_BASE_URL or SIMPRO_ACCESS_TOKEN in environment.");
 }
@@ -341,7 +402,7 @@ const fetchFpowData = async (jobId) => {
                             QuoteSource: quoteSource,
                             Job: j.ID ? `#${j.ID}` : "", 
                             Comment: "",
-                            Status: dj.Stage || "pending"
+                            Status: displayStatus // Use our distilled DisplayStatus for sorting consistency
                         };
                     } catch (e) { return null; }
                 }));
@@ -374,26 +435,88 @@ const fetchFpowData = async (jobId) => {
                         Quote: q.ID ? `#${q.ID}` : "", 
                         Job: "", 
                         Comment: "", 
-                        Status: q.Stage || "pending"
+                        Status: "QUOTED" // Distinct status for quotes
                     });
                 }
             }
-            // Sort by Status Hierarchy: 1. In Progress, 2. Pending, 3. Other
+            // Sort by Status Hierarchy: 1. IN PROGRESS, 2. PENDING, 3. QUOTED, 4. Others
             outstandingWorks.sort((a, b) => {
                 const getPriority = (status) => {
                     const s = (status || "").toLowerCase();
-                    if (s.includes('progress')) return 1;
-                    if (s.includes('pending')) return 2;
-                    return 3;
+                    if (s === 'in progress') return 1;
+                    if (s === 'pending') return 2;
+                    if (s === 'quoted') return 3;
+                    return 4;
                 };
-                return getPriority(a.Status) - getPriority(b.Status);
+                
+                const pA = getPriority(a.Status);
+                const pB = getPriority(b.Status);
+                
+                if (pA !== pB) return pA - pB;
+                
+                // Secondary sort: Newest Job/Quote ID first
+                const idA = parseInt((a.Job || a.Quote || "0").replace(/\D/g, ''));
+                const idB = parseInt((b.Job || b.Quote || "0").replace(/\D/g, ''));
+                return idB - idA;
             });
         } catch (err) {
             console.error(`Aggregation error: ${err.message}`);
         }
     }
 
-    return {
+    // --- Dynamic Asset Date Discovery (NEW SOURCE OF TRUTH) ---
+    // Uses the /customerAssets/ endpoint which returns ServiceLevels INLINE (single API call).
+    // The /assets/{id}/serviceLevels/ endpoint does NOT exist on LIVE simPRO.
+    let liveSixMo = { Month: "", Year: "" };
+    let liveTwelveMo = { Month: "", Year: "" };
+
+    if (siteId) {
+        try {
+            console.log(`[ASSET DISCOVERY] Fetching Customer Assets for Site #${siteId}...`);
+            const custAssetsRes = await getSimpro(`/api/v1.0/companies/${COMPANY_ID}/customerAssets/?Site.ID=${siteId}&pageSize=50`);
+            
+            if (custAssetsRes.data && custAssetsRes.data.length > 0) {
+                console.log(`[ASSET DISCOVERY] Found ${custAssetsRes.data.length} customer assets at site.`);
+                
+                for (const asset of custAssetsRes.data) {
+                    if (!asset.ServiceLevels || asset.ServiceLevels.length === 0) continue;
+                    
+                    for (const sl of asset.ServiceLevels) {
+                        // Use ServiceDate (the field returned by customerAssets endpoint)
+                        const dateStr = sl.ServiceDate || sl.NextDate || "";
+                        if (!dateStr) continue;
+                        
+                        const slName = (sl.Name || "").toLowerCase();
+                        const slDate = new Date(dateStr);
+                        if (isNaN(slDate.getTime())) continue;
+                        
+                        const monthStr = slDate.toLocaleString('default', { month: 'long' });
+                        const yearNum = slDate.getFullYear().toString();
+
+                        // 12-Month / Annual Matching
+                        const isAnnual = slName.includes("annual") || slName.includes("12 month") || slName.includes("yearly") || slName.includes("contract") || slName.includes("12month");
+                        // 6-Month matching
+                        const is6Mo = slName.includes("6 month") || slName.includes("6month") || slName.includes("bi-annual") || slName.includes("half year") || slName.includes("semi-annual");
+                        
+                        if (isAnnual && !liveTwelveMo.Month) {
+                            console.log(`[ASSET MATCH] Found Annual: ${monthStr} ${yearNum} on Asset #${asset.ID} (${sl.Name})`);
+                            liveTwelveMo = { Month: monthStr, Year: yearNum };
+                        } else if (is6Mo && !liveSixMo.Month) {
+                            console.log(`[ASSET MATCH] Found 6-Mo: ${monthStr} ${yearNum} on Asset #${asset.ID} (${sl.Name})`);
+                            liveSixMo = { Month: monthStr, Year: yearNum };
+                        }
+                    }
+                    if (liveTwelveMo.Month && liveSixMo.Month) break;
+                }
+            } else {
+                console.log(`[ASSET DISCOVERY] No customer assets found for site #${siteId}`);
+            }
+        } catch (e) {
+            console.error(`[ASSET DISCOVERY ERROR] Site #${siteId}: ${e.message}`);
+        }
+    }
+
+    const result = {
         JobID: parseInt(jobId), 
         Site: siteName,
         SiteContact: { Name: contactName || clientName, Phone: contactPhone, Email: contactEmail, Source: contactSource },
@@ -404,10 +527,21 @@ const fetchFpowData = async (jobId) => {
         ServiceDue: {
             Type: (jobData.Name || "").toLowerCase().includes('12 monthly') ? "12 Monthly" : "6 Monthly",
             Month: new Date(jobData.DateIssued || new Date()).toLocaleString('default', { month: 'long' }),
-            Year: new Date(jobData.DateIssued || new Date()).getFullYear()
+            Year: new Date(jobData.DateIssued || new Date()).getFullYear(),
+            // Pass live data for BOTH display sections
+            LiveSixMo: liveSixMo,
+            LiveTwelveMo: liveTwelveMo
         },
         OutstandingWorks: outstandingWorks
     };
+
+    // 5. Initiate Background Asset Sync (Do not await, keep it fast for the user)
+    const jobType = result.ServiceDue.Type;
+    if (jobData.DateIssued && siteId) {
+        syncAssetDates(siteId, jobData.DateIssued, jobType).catch(e => console.error("AutoSync catch:", e));
+    }
+
+    return result;
 };
 
 /**
@@ -510,9 +644,9 @@ hApp.get('/api/customers/search', async (req, res) => {
             const lowerQ = q.toLowerCase();
             filtered = activeCustomersCache.filter(c => c.name.toLowerCase().includes(lowerQ));
         }
-        
-        // Return top 50 results
-        const results = filtered.slice(0, 50);
+
+        // 4. Arrange: Ensure the list is sorted by Job ID (Latest activity first)
+        const results = filtered.sort((a, b) => parseInt(b.id) - parseInt(a.id)).slice(0, 50);
         res.json({ results });
     } catch (err) {
         console.error(`[CUSTOMER SEARCH ERROR] ${err.message}`);
@@ -535,12 +669,16 @@ hApp.get('/api/customers/:id/jobs', async (req, res) => {
                 name: j.Name || `Job #${j.ID}`,
                 site: j.Site?.Name || 'Unknown Site',
                 stage: j.Stage === 'Progress' ? 'In Progress' : j.Stage,
-                date: j.DateIssued ? new Date(j.DateIssued).toLocaleDateString('en-AU') : '—'
+                date: j.DateIssued ? new Date(j.DateIssued).toLocaleDateString('en-AU') : '—',
+                rawDate: j.DateIssued || '0'
             }))
             .sort((a, b) => {
+                // 1. Priority to "In Progress"
                 if (a.stage === 'In Progress' && b.stage !== 'In Progress') return -1;
                 if (b.stage === 'In Progress' && a.stage !== 'In Progress') return 1;
-                return b.id - a.id;
+                
+                // 2. Latest date/ID first
+                return parseInt(b.id) - parseInt(a.id);
             });
             
         res.json({ jobs });

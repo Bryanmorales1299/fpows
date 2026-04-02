@@ -1032,20 +1032,21 @@
     <div class="control-bar">
         <!-- Control Bar Left Aligned -->
         <div class="search-row">
-            <div style="display:flex; gap:24px; align-items:center; justify-content:flex-start; flex-wrap:nowrap;">
-                <select id="schedule-select">
-                    <option value="">Fetching today's jobs...</option>
-                </select>
-
-                <input type="number" id="job-id-input" placeholder="Enter simPRO Job ID…" min="1">
-                <button class="btn" id="btn-fetch">🔍 Reload</button>
+            <div style="display:flex; gap:18px; align-items:center; justify-content:flex-start; flex-wrap:nowrap;">
+                <button class="btn" id="btn-search-customers">🔍 Search Customers</button>
+                <button class="btn btn-outline" id="btn-fetch">🔄 Reload</button>
                 <button class="btn btn-outline" id="btn-publish" style="display:none">Save and Sent to Email</button>
-                <button class="btn btn-outline" id="btn-search-customers">🔍 Search Customers</button>
                 <button class="btn btn-outline" id="btn-history">📋 History</button>
                 <button class="btn btn-outline" id="btn-print" style="display:none">🖨 Print</button>
+
+                <!-- Hidden inputs for logic compatibility -->
+                <select id="schedule-select" style="display:none">
+                    <option value="">Fetching...</option>
+                </select>
+                <input type="number" id="job-id-input" style="display:none">
             </div>
         </div>
-        <div id="status-pill" class="status-pill pill-waiting">⏳ Select or Enter Job</div>
+        <div id="status-pill" class="status-pill pill-waiting">⏳ Search for a job</div>
     </div>
 
     <!-- History Modal -->
@@ -1398,6 +1399,7 @@
                     <div class="agent-info">
                         <h3>FPOWS Agent</h3>
                         <p><span class="status-dot"></span> simPRO Online</p>
+                        <p style="font-size: 0.65rem; color: #16a34a; font-weight: 600; margin-top: 4px;">✅ Automatic simPRO Asset Sync: Active</p>
                     </div>
                 </div>
 
@@ -1496,12 +1498,21 @@
             setVal('f-afss', data.AFSSDue);
             setVal('f-jobid', data.JobID);
             setVal('f-footer-job', data.JobID);
-            setVal('f-6mo', data.ServiceDue?.Type);
-            setVal('f-6mo-month', data.ServiceDue?.Month);
-            setVal('f-6mo-year', data.ServiceDue?.Year);
-            setVal('f-12mo', data.ServiceDue?.Type === '12 Monthly' ? '12 Monthly' : '—');
-            setVal('f-12mo-month', data.ServiceDue?.Type === '12 Monthly' ? data.ServiceDue?.Month : '');
-            setVal('f-12mo-year', data.ServiceDue?.Type === '12 Monthly' ? data.ServiceDue?.Year : '');
+            
+            // 6-Monthly Display (Strictly Live)
+            const sixMonth = data.ServiceDue?.LiveSixMo?.Month || "";
+            const sixYear = data.ServiceDue?.LiveSixMo?.Year || "";
+            setVal('f-6mo', sixMonth ? '6 Monthly' : '—');
+            setVal('f-6mo-month', sixMonth);
+            setVal('f-6mo-year', sixYear);
+
+            // 12-Monthly Display (Strictly Live)
+            const twelveMonth = data.ServiceDue?.LiveTwelveMo?.Month || "";
+            const twelveYear = data.ServiceDue?.LiveTwelveMo?.Year || "";
+            
+            setVal('f-12mo', twelveMonth ? '12 Monthly' : '—');
+            setVal('f-12mo-month', twelveMonth);
+            setVal('f-12mo-year', twelveYear);
 
             const tbody = $('f-works-body');
             tbody.innerHTML = '';
