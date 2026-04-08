@@ -170,6 +170,25 @@ const fetchFpowData = async (jobId) => {
 
     // 1. Site Info
     let siteName = jobData.Site?.Name || "Site Details Not Found";
+    let siteArea = "N/A";
+    if (jobData.Site?.ID) {
+        try {
+            const siteRes = await getSimpro(`/api/v1.0/companies/${COMPANY_ID}/sites/${jobData.Site.ID}?columns=Address`);
+            if (siteRes.data && siteRes.data.Address) {
+                const addr = siteRes.data.Address;
+                // show only in australia
+                const isAustralia = !addr.Country || addr.Country.toLowerCase().includes('australia');
+                if (isAustralia) {
+                    const suburb = addr.City || "";
+                    const state = addr.State || "";
+                    const postcode = addr.PostalCode || "";
+                    siteArea = `${suburb}${suburb && (state || postcode) ? ', ' : ''}${state}${state && postcode ? ' ' : ''}${postcode}`.trim();
+                } else {
+                    siteArea = "Non-Australian Site";
+                }
+            }
+        } catch (e) {}
+    }
     
     // 2. Contact Parse
     let contactSource = jobData.Contact?.Name ? "simpro_direct" : "not_found";
@@ -548,6 +567,7 @@ const fetchFpowData = async (jobId) => {
     const result = {
         JobID: parseInt(jobId), 
         Site: siteName,
+        SiteArea: siteArea,
         SiteContact: { Name: contactName || clientName, Phone: contactPhone, Email: contactEmail, Source: contactSource },
         Client: clientName, 
         DateCompleted: new Date().toLocaleDateString('en-AU'),
@@ -646,36 +666,114 @@ hApp.get('/api/customers/search', async (req, res) => {
         if (!activeCustomersCache || (Date.now() - activeCustomersCacheTime) > 60000) {
             console.log(`[SIMPRO API] Refreshing Active Customers Cache via Jobs endpoint...`);
             
-            // 1. Fetch recent Pending and InProgress jobs (Increased limit to 250)
-            const pendingRes = await getSimpro(`/api/v1.0/companies/${COMPANY_ID}/jobs/?Stage=Pending&pageSize=250&orderby=-ID&columns=Customer`);
-            const inProgRes = await getSimpro(`/api/v1.0/companies/${COMPANY_ID}/jobs/?Stage=Progress&pageSize=250&orderby=-ID&columns=Customer`);
-            
-            const allActiveJobs = [...(pendingRes.data || []), ...(inProgRes.data || [])];
-            
-            // 2. Extract unique Customers from those active jobs
+            // 1. Fetch recent jobs to populate customers (Limit to 100 for stability)
+            const jobsRes = await getSimpro(`/api/v1.0/companies/${COMPANY_ID}/jobs/?pageSize=100&columns=ID,Name,Customer,Site,Status,DateIssued,DateModified,Tags`);
+            const siteMap = new Map();
+
+            // Build unique map of customers
             const uniqueMap = new Map();
-            allActiveJobs.forEach(job => {
+            const TWO_MONTHS_MS = 60 * 24 * 60 * 60 * 1000;
+            const now = Date.now();
+
+            jobsRes.data.forEach(job => {
                 if (job.Customer && job.Customer.ID) {
-                    uniqueMap.set(job.Customer.ID, {
-                        id: String(job.Customer.ID),
-                        name: job.Customer.CompanyName || 'Unnamed',
-                        type: 'Company'
-                    });
+                    const cId = job.Customer.ID;
+                    if (!uniqueMap.has(cId)) {
+                        const jobDate = job.DateModified ? new Date(job.DateModified).getTime() : now;
+                        const isOverdue = (now - jobDate) > TWO_MONTHS_MS;
+                        uniqueMap.set(cId, {
+                            id: cId,
+                            name: job.Customer.CompanyName || `${job.Customer.GivenName || ''} ${job.Customer.FamilyName || ''}`.trim() || 'Unnamed',
+                            type: job.Customer.CompanyName ? 'Company' : 'Individual',
+                            priority: false,
+                            overdue: isOverdue,
+                            postcode: 'N/A'
+                        });
+                    }
                 }
             });
-            activeCustomersCache = Array.from(uniqueMap.values());
+            const customersArray = Array.from(uniqueMap.values());
+
+            const getTagNames = (tags) => {
+                if (!Array.isArray(tags) || tags.length === 0) return null;
+                const names = tags.map(t => {
+                    if (typeof t === 'string') return t;
+                    if (t.Name) return t.Name;
+                    if (t.ID) return `Tag ID: ${t.ID}`;
+                    return 'Tagged';
+                }).filter(Boolean);
+                return names.length > 0 ? names : null;
+            };
+            
+            // Process all customers in small throttled batches to prevent 429 Too Many Requests errors
+            const batchSize = 3;
+            for (let i = 0; i < customersArray.length; i += batchSize) {
+                const batch = customersArray.slice(i, i + batchSize);
+                await Promise.allSettled(batch.map(async (c) => {
+                    if (c.priority) return; 
+                    try {
+                        let finalTags = null;
+                        
+                        // Try to fetch Customer Profile Tags and Address directly via standard endpoint
+                        const routeType = c.type === 'Company' ? 'companies' : 'individuals';
+                        const custRes = await getSimpro(`/api/v1.0/companies/${COMPANY_ID}/customers/${routeType}/${c.id}?columns=ID,Tags,Address`);
+                        
+                        // Handle Tags
+                        if (custRes.data && custRes.data.Tags && getTagNames(custRes.data.Tags)) {
+                            const allTags = getTagNames(custRes.data.Tags);
+                            // Strictly filter down to only tags containing "testing" (which catches both TESTING and NON TESTING)
+                            const testingTags = allTags.filter(t => t.toLowerCase().includes('testing'));
+                            
+                            if (testingTags.length > 0) {
+                                finalTags = testingTags;
+                            }
+                        }
+
+                        // Handle Address/Postcode
+                        if (custRes.data && custRes.data.Address && custRes.data.Address.PostalCode) {
+                            c.postcode = custRes.data.Address.PostalCode;
+                        }
+
+                        if (finalTags) {
+                            c.priority = true;
+                            c.priorityTags = finalTags;
+                        }
+                    } catch (e) {
+                        // Ignore lookup errors silently
+                    }
+                }));
+                // artificial delay to ensure we do not hit simPRO rate limits
+                await new Promise(r => setTimeout(r, 300));
+            }
+            
+            activeCustomersCache = customersArray;
             activeCustomersCacheTime = Date.now();
         }
         
-        // 3. Perform Case-Insensitive Name Search
+        // 3. Perform Case-Insensitive Name & Postcode Search
         let filtered = activeCustomersCache;
         if (q.length >= 2) {
             const lowerQ = q.toLowerCase();
-            filtered = activeCustomersCache.filter(c => c.name.toLowerCase().includes(lowerQ));
+            filtered = activeCustomersCache.filter(c => 
+                c.name.toLowerCase().includes(lowerQ) || 
+                (c.postcode && c.postcode.toLowerCase().includes(lowerQ))
+            );
         }
 
-        // 4. Arrange: Ensure the list is sorted by Job ID (Latest activity first)
-        const results = filtered.sort((a, b) => parseInt(b.id) - parseInt(a.id)).slice(0, 50);
+        // 4. Arrange: Ensure only a max of 10 clients are prioritized, preserving the raw, natural chronological order of all items
+        let majorCount = 0;
+        const results = filtered.map(c => {
+            // Un-prioritize items after we hit the limit of 10 major clients
+            if (c.priority) {
+                if (majorCount < 10) {
+                    majorCount++;
+                    return c;
+                } else {
+                    return { ...c, priority: false, priorityTags: null };
+                }
+            }
+            return c;
+        }).slice(0, 50);
         res.json({ results });
     } catch (err) {
         console.error(`[CUSTOMER SEARCH ERROR] ${err.message}`);
