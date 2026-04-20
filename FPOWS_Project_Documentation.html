@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FPOWS Project Documentation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --red: #e63946;
+            --dark: #1a1a2e;
+            --gray-bg: #f8f9fa;
+            --border: #e2e8f0;
+            --accent-soft: rgba(230, 57, 70, 0.05);
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.7;
+            color: #334155;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 60px 40px;
+            background: #fff;
+        }
+
+        h1, h2, h3, .toc-title {
+            font-family: 'Outfit', sans-serif;
+            color: var(--dark);
+        }
+
+        .header {
+            border-bottom: 5px solid var(--red);
+            padding-bottom: 30px;
+            margin-bottom: 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin: 0;
+            letter-spacing: -1px;
+            line-height: 1;
+        }
+
+        .header h1 span { color: var(--red); }
+
+        .tagline {
+            font-size: 1rem;
+            color: #64748b;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 10px;
+        }
+
+        /* Table of Contents */
+        .toc {
+            background: var(--gray-bg);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 50px;
+            border: 1px solid var(--border);
+        }
+
+        .toc-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toc ul { list-style: none; padding: 0; margin: 0; }
+        .toc li { margin-bottom: 8px; }
+        .toc a {
+            text-decoration: none;
+            color: #475569;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .toc a:hover { color: var(--red); }
+
+        /* General Sections */
+        section { margin-bottom: 60px; scroll-margin-top: 40px; }
+
+        h2 {
+            font-size: 1.8rem;
+            border-left: 6px solid var(--red);
+            padding-left: 20px;
+            margin-bottom: 25px;
+            font-weight: 800;
+        }
+
+        h3 {
+            font-size: 1.3rem;
+            margin-top: 30px;
+            color: var(--red);
+        }
+
+        p { margin-bottom: 20px; }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .card strong {
+            display: block;
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            color: var(--dark);
+        }
+
+        ul.benefit-list {
+            padding-left: 20px;
+        }
+
+        ul.benefit-list li {
+            margin-bottom: 12px;
+            position: relative;
+        }
+
+        .badge {
+            background: var(--red);
+            color: white;
+            padding: 2px 10px;
+            border-radius: 99px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .no-print-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--dark);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 99px;
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border: none;
+            z-index: 1000;
+        }
+
+        .no-print-btn:hover { background: var(--red); }
+
+        @media print {
+            .no-print-btn { display: none; }
+            body { padding: 0; }
+            section { page-break-inside: avoid; }
+            .toc { border: none; background: transparent; padding: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <button class="no-print-btn" onclick="window.print()">📥 Download as PDF</button>
+
+    <div class="header">
+        <div>
+            <h1><span>F</span>POWS</h1>
+            <div class="tagline">Fire Protection Outstanding Works Status</div>
+        </div>
+        <div style="text-align: right; color: #64748b; font-size: 0.9rem;">
+            REDMEN Fire Protection<br>
+            Internal Automation Doc v1.4<br>
+            Date: April 2026
+        </div>
+    </div>
+
+    <!-- Table of Contents -->
+    <nav class="toc">
+        <div class="toc-title">📋 Table of Contents</div>
+        <ul>
+            <li><a href="#overview">1. Executive Overview</a></li>
+            <li><a href="#users">2. Target Audience (Who will use this?)</a></li>
+            <li><a href="#benefits">3. Key Benefits & Value Proposition</a></li>
+            <li><a href="#automation">4. Automated Functions & Intelligence</a></li>
+            <li><a href="#workflow">5. Operational Workflow</a></li>
+            <li><a href="#security">6. Data Integrity & Security</a></li>
+        </ul>
+    </nav>
+
+    <!-- Overview -->
+    <section id="overview">
+        <h2>1. Executive Overview</h2>
+        <p>The <strong>FPOWS (Fire Protection Outstanding Works Status)</strong> platform is a sophisticated automation layer built on top of the simPRO API. It is designed to modernize how Redmen Fire Protection tracks compliance, manages client portfolios, and generates legal reporting documents.</p>
+        <p>By shifting from manual spreadsheets to real-time data synchronization, the system ensures that critical fire safety defects are prioritized, reported, and quoted with zero latency.</p>
+    </section>
+
+    <!-- Users -->
+    <section id="users">
+        <h2>2. Target Audience</h2>
+        <div class="feature-grid">
+            <div class="card">
+                <strong>Customer Experience Agents (CEA)</strong>
+                Primary users for high-volume site lookups, job verification, and dispatching official "Call Sheets" to clients.
+            </div>
+            <div class="card">
+                <strong>Portfolio Managers</strong>
+                Utilized to audit the compliance health of "Major Clients" and identify sites requiring immediate intervention.
+            </div>
+            <div class="card">
+                <strong>Sales & Account Teams</strong>
+                Used as a lead-generation tool to identify sites with long periods of inactivity or outstanding quotes.
+            </div>
+            <div class="card">
+                <strong>Compliance Officers</strong>
+                To ensure AFSS (Annual Fire Safety Statement) critical items are being addressed within legal timeframes.
+            </div>
+        </div>
+    </section>
+
+    <!-- Benefits -->
+    <section id="benefits">
+        <h2>3. Key Benefits</h2>
+        <ul class="benefit-list">
+            <li><strong>Drastic Time Savings:</strong> Automated report generation reduces a 2-hour manual data entry task to a 2-minute automated sync.</li>
+            <li><strong>100% Data Accuracy:</strong> By pulling data directly from simPRO, the risks associated with manual "copy-pasting" (IDs, Site Names, Addresses) are eliminated.</li>
+            <li><strong>Compliance Safety Net:</strong> Dynamic overdue flags (calculated to exact months and days) ensure that no site remains inactive without a visible alert.</li>
+            <li><strong>Professional Brand Image:</strong> Standardized, premium call sheets and emails provide clients with a consistent and high-quality interaction experience.</li>
+            <li><strong>Collaborative Visibility:</strong> Live indicators allow multiple agents to see who else is viewing a job, preventing duplicate emails to the same client.</li>
+        </ul>
+    </section>
+
+    <!-- Automation -->
+    <section id="automation">
+        <h2>4. Automated Functions</h2>
+        <p>The core of FPOWS lies in its "Set and Forget" logic. Several key business functions have been fully automated:</p>
+
+        <h3>A. Real-Time simPRO Sync</h3>
+        <p>The system automatically connects to simPRO to retrieve Job Status, Site Metadata, Equipment Types, and DARN/Lead/Quote linkages without user input.</p>
+
+        <h3>B. Dynamic Overdue & Aging Logic</h3>
+        <p>Using a sub-second calculation, the system computes the exact time since the last site touchpoint. It identifies customers who are <span class="badge">Overdue</span> (30+ days of inactivity) and calculates the age down to the exact day.</p>
+
+        <h3>C. Intelligent Client Prioritization</h3>
+        <p>The software automatically scans simPRO customer tags. Clients tagged with "Major Contract," "Testing," or "Non-Testing" are automatically prioritized and pinned to the top of the search dashboard.</p>
+
+        <h3>D. Call Sheet Report Generation</h3>
+        <p>Professional fire safety reports (PDF/HTML) are generated instantly by scraping live data. This includes automated "Clean Descriptions" which strip away internal technical shorthand to present a clean "Client-Facing" narrative.</p>
+
+        <h3>E. Automated Asset Date Discovery</h3>
+        <p>The system deep-dives into Customer Assets to find the most accurate 6-Monthly and 12-Monthly service due dates, providing a "Source of Truth" for AFSS compliance.</p>
+    </section>
+
+    <!-- Workflow -->
+    <section id="workflow">
+        <h2>5. Operational Workflow</h2>
+        <p>FPOWS follows a simplified 4-step workflow:</p>
+        <ol>
+            <li><strong>Discovery:</strong> Use the Global Search to find clients by name, ID, or Postcode.</li>
+            <li><strong>Verification:</strong> Expand the customer to see all recent work (Pending through Invoiced).</li>
+            <li><strong>Aggregation:</strong> Click into a job to pull the full site history and outstanding works list.</li>
+            <li><strong>Dispatch:</strong> Review the automated report and click "Publish" to email the Call Sheet to the client and manager.</li>
+        </ol>
+    </section>
+
+    <!-- Security -->
+    <section id="security">
+        <h2>6. Data Integrity & Security</h2>
+        <p>All data is processed through secure infrastructure. Access tokens for simPRO are never exposed to the client-side, and all communications are encrypted. The system includes an automated "Email Lock" during development stages to prevent accidental live emails to clients.</p>
+    </section>
+
+    <div style="text-align: center; margin-top: 100px; color: #94a3b8; font-size: 0.8rem; border-top: 1px solid #eee; padding-top: 20px;">
+        &copy; 2026 Labrobin Pty Ltd T/A Redmen Fire Protection. All Rights Reserved.
+    </div>
+
+</body>
+</html>

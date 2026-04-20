@@ -1,3 +1,4 @@
+// [HEARTBEAT] Loaded Bryan as Sender - 2026-04-20
 import { FastMCP } from 'fastmcp';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -97,21 +98,22 @@ if (!SIMPRO_BASE_URL || !SIMPRO_ACCESS_TOKEN) {
 }
 
 // Reusable SMTP transporter (created once, connection pooled)
-let emailTransporter = null;
 function getTransporter() {
-    if (!emailTransporter && SMTP_USER && SMTP_PASS) {
-        emailTransporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: { user: SMTP_USER, pass: SMTP_PASS },
+    // Re-read env every time to ensure we pick up .env changes without needing a full reboot
+    const user = process.env.SMTP_USER ? process.env.SMTP_USER.replace(/^"|"$/g, '') : null;
+    const pass = process.env.SMTP_PASS ? process.env.SMTP_PASS.replace(/^"|"$/g, '') : null;
+
+    if (user && pass) {
+        return nodemailer.createTransport({
+            host: 'smtp.gmail.com',
+            port: 465,
+            secure: true,
+            auth: { user, pass },
             pool: true,
-            maxConnections: 3,
-            connectionTimeout: 10000,
-            greetingTimeout: 10000,
-            socketTimeout: 30000,
+            maxConnections: 3
         });
-        console.log('[SMTP] Transporter created with pooling and timeouts.');
     }
-    return emailTransporter;
+    return null;
 }
 
 // Simple retry helper for sending email
@@ -664,35 +666,46 @@ hApp.get('/api/customers/search', async (req, res) => {
     try {
         // Cache valid for 60 seconds to prevent hammering simPRO API
         if (!activeCustomersCache || (Date.now() - activeCustomersCacheTime) > 60000) {
-            console.log(`[SIMPRO API] Refreshing Active Customers Cache via Jobs endpoint...`);
-            
-            // 1. Fetch recent jobs to populate customers (Limit to 100 for stability)
-            const jobsRes = await getSimpro(`/api/v1.0/companies/${COMPANY_ID}/jobs/?pageSize=100&columns=ID,Name,Customer,Site,Status,DateIssued,DateModified,Tags`);
+            // 1. Fetch recent jobs to populate customers (Limit to 150 for better coverage, ordered by newest activity)
+            const jobsRes = await getSimpro(`/api/v1.0/companies/${COMPANY_ID}/jobs/?pageSize=150&orderby=-DateModified&columns=ID,Name,Customer,Site,Status,DateIssued,DateModified,Tags`);
             const siteMap = new Map();
 
             // Build unique map of customers
             const uniqueMap = new Map();
-            const TWO_MONTHS_MS = 60 * 24 * 60 * 60 * 1000;
+            const OVERDUE_THRESHOLD_MS = 30 * 24 * 60 * 60 * 1000;
             const now = Date.now();
 
             jobsRes.data.forEach(job => {
                 if (job.Customer && job.Customer.ID) {
                     const cId = job.Customer.ID;
+                    const modDate = job.DateModified ? new Date(job.DateModified).getTime() : 0;
+                    
                     if (!uniqueMap.has(cId)) {
-                        const jobDate = job.DateModified ? new Date(job.DateModified).getTime() : now;
-                        const isOverdue = (now - jobDate) > TWO_MONTHS_MS;
+                        const isOverdue = modDate > 0 ? (now - modDate) > OVERDUE_THRESHOLD_MS : false;
                         uniqueMap.set(cId, {
                             id: cId,
                             name: job.Customer.CompanyName || `${job.Customer.GivenName || ''} ${job.Customer.FamilyName || ''}`.trim() || 'Unnamed',
                             type: job.Customer.CompanyName ? 'Company' : 'Individual',
                             priority: false,
                             overdue: isOverdue,
-                            postcode: 'N/A'
+                            postcode: 'N/A',
+                            latestActivity: modDate // Keep track of latest change
                         });
+                    } else {
+                        // If we already have this customer, check if this job is newer
+                        const curr = uniqueMap.get(cId);
+                        if (modDate > curr.latestActivity) {
+                            curr.latestActivity = modDate;
+                            const OVERDUE_THRESHOLD_MS = 30 * 24 * 60 * 60 * 1000;
+                            curr.overdue = (now - modDate) > OVERDUE_THRESHOLD_MS;
+                        }
                     }
                 }
             });
-            const customersArray = Array.from(uniqueMap.values());
+            let customersArray = Array.from(uniqueMap.values());
+            
+            // Sort the raw array by activity before processing tags
+            customersArray.sort((a, b) => b.latestActivity - a.latestActivity);
 
             const getTagNames = (tags) => {
                 if (!Array.isArray(tags) || tags.length === 0) return null;
@@ -788,23 +801,29 @@ hApp.get('/api/customers/:id/jobs', async (req, res) => {
     try {
         const jobsRes = await getSimpro(`/api/v1.0/companies/${COMPANY_ID}/jobs/?Customer.ID=${custId}&pageSize=30&orderby=-ID&columns=ID,Name,Site,Stage,DateIssued`);
         
-        const validStages = ['Pending', 'Progress'];
+        const validStages = ['Pending', 'Progress', 'Completed', 'Invoiced'];
         const jobs = (jobsRes.data || [])
             .filter(j => validStages.includes(j.Stage))
             .map(j => ({
                 id: j.ID,
                 name: j.Name || `Job #${j.ID}`,
                 site: j.Site?.Name || 'Unknown Site',
-                stage: j.Stage === 'Progress' ? 'In Progress' : j.Stage,
+                stage: j.Stage === 'Progress' ? 'In Progress' : (j.Stage || 'Unknown'),
                 date: j.DateIssued ? new Date(j.DateIssued).toLocaleDateString('en-AU') : '—',
                 rawDate: j.DateIssued || '0'
             }))
             .sort((a, b) => {
-                // 1. Priority to "In Progress"
-                if (a.stage === 'In Progress' && b.stage !== 'In Progress') return -1;
-                if (b.stage === 'In Progress' && a.stage !== 'In Progress') return 1;
-                
-                // 2. Latest date/ID first
+                const getScore = (s) => {
+                    const sl = (s || '').toLowerCase();
+                    if (sl.includes('progress')) return 1;
+                    if (sl.includes('pending')) return 2;
+                    if (sl.includes('completed')) return 3;
+                    if (sl.includes('invoiced')) return 4;
+                    return 5;
+                };
+                const scoreA = getScore(a.stage);
+                const scoreB = getScore(b.stage);
+                if (scoreA !== scoreB) return scoreA - scoreB;
                 return parseInt(b.id) - parseInt(a.id);
             });
             

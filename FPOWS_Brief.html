@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FPOWS User Guide Brief</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --red: #e63946;
+            --dark: #1a1a2e;
+            --gray: #f8f9fa;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px;
+            background: #fff;
+        }
+        .header {
+            border-bottom: 4px solid var(--red);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            color: var(--dark);
+            margin: 0;
+            font-size: 2rem;
+            font-weight: 800;
+        }
+        .header h1 span {
+            color: var(--red);
+        }
+        .tagline {
+            font-size: 0.9rem;
+            color: #666;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        h2 {
+            color: var(--dark);
+            border-left: 5px solid var(--red);
+            padding-left: 15px;
+            margin-top: 40px;
+            font-size: 1.4rem;
+        }
+        h3 {
+            color: #444;
+            font-size: 1.1rem;
+            margin-top: 25px;
+        }
+        .feature-box {
+            background: var(--gray);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #eee;
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-right: 5px;
+        }
+        .badge-red { background: var(--red); color: white; }
+        .badge-gray { background: #e0e0e0; color: #555; }
+        
+        .footer {
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            font-size: 0.8rem;
+            color: #888;
+            text-align: center;
+        }
+
+        @media print {
+            body { padding: 0; }
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <h1><span>F</span>POWS</h1>
+            <div class="tagline">Automation System Brief</div>
+        </div>
+        <div style="text-align: right; color: #666; font-size: 0.8rem;">
+            REDMEN Fire Protection<br>
+            User Guide v1.2
+        </div>
+    </div>
+
+    <p>The <strong>Fire Protection Outstanding Works Status (FPOWS)</strong> automation tool is a centralized dashboard designed to streamline tracking, managing, and prioritizing urgent repairs across all service sites for Redmen Fire Protection.</p>
+
+    <div class="feature-box">
+        <h2>Goals & Purpose</h2>
+        <p>The primary goal of FPOWS is to eliminate manual tracking errors and ensure that no critical fire safety defect is overlooked. It serves as an intelligence layer on top of simPRO, turning raw job data into actionable priorities for coordinators and technicians.</p>
+    </div>
+
+    <h2>Who is this for?</h2>
+    <ul>
+        <li><strong>Sales Agents:</strong> To identify outstanding works and opportunities for client service upgrades.</li>
+        <li><strong>Account Managers:</strong> To provide transparent status updates to "Major Clients" regarding their asset compliance and maintenance cycles.</li>
+    </ul>
+
+    <h2>Why use FPOWS?</h2>
+    <p>Unlike standard job management systems, FPOWS is specifically tuned for the **Fire Protection lifecycle**. It tracks AFSS (Annual Fire Safety Statement) critical timelines, ensuring that sites remain compliant with Australian standards. It reduces the time spent on "Call Sheets" from hours to minutes by automating data entry from simPRO.</p>
+
+    <h2 style="break-before: page;">Key Features</h2>
+
+    <div class="feature-box">
+        <h3>1. Advanced Customer Search</h3>
+        <p>Rapidly look up clients by name or ID. Each site is tagged with its <strong>Postcode (📍)</strong> and <strong>Geographical Area</strong> to ensure technicians are reviewing the correct location.</p>
+    </div>
+
+    <div class="feature-box">
+        <h3>2. Strategic Client Prioritization</h3>
+        <p><strong>Major Clients (⭐)</strong> are automatically grouped at the top. Specific contract identifiers provide instant context on service level requirements.</p>
+    </div>
+
+    <div class="feature-box">
+        <h3>3. Overdue Reports Oversight</h3>
+        <p>Sites that are <span class="badge badge-red">OVERDUE</span> are flagged with visual alerts showing exact months and days of inactivity. This allows the team to focus on compliance and AFSS critical items.</p>
+    </div>
+
+    <div class="feature-box">
+        <h3>4. Interactive Call Sheets</h3>
+        <p>Live data synchronization from <strong>simPRO</strong> provides up-to-date Equipment Types, Job IDs, and Quote numbers directly on the digital Call Sheet.</p>
+    </div>
+
+    <h2 style="break-before: page;">How to Get Started</h2>
+    <ol>
+        <li><strong>Authentication:</strong> Ensure you are logged into the corporate gcloud environment and simPRO.</li>
+        <li><strong>Search:</strong> Click "Search Customers" and filter by name or priority.</li>
+        <li><strong>Expand:</strong> Use the "▸" icon to reveal specific site jobs and history.</li>
+        <li><strong>Review:</strong> Populate the formal Call Sheet and update site contact info.</li>
+        <li><strong>Finalize:</strong> Print or Email the final status report to stakeholders.</li>
+    </ol>
+
+    <div class="feature-box" style="border-left: 5px solid #333;">
+        <h2>Confidentiality & Data Security</h2>
+        <p>FPOWS handles sensitive client and site compliance data. Access is restricted to authorized Redmen personnel only. All data pulled from simPRO is protected under our corporate security protocols and must not be shared with third parties without explicit management approval.</p>
+    </div>
+
+    <div class="footer">
+        &copy; 2026 Labrobin Pty Ltd T/A Redmen Fire Protection
+    </div>
+</body>
+</html>
