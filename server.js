@@ -8,6 +8,7 @@ import dotenv from 'dotenv';
 import { z } from 'zod';
 import nodemailer from 'nodemailer';
 import express from 'express';
+import cron from 'node-cron';
 
 // Load .env if not in production
 if (process.env.NODE_ENV !== 'production') {
@@ -57,27 +58,28 @@ async function syncAssetDates(siteId, jobDate, jobType) {
         const nextDateStr = baseDate.toISOString().split('T')[0];
         console.log(`[AUTO-SYNC] Target Next Date: ${nextDateStr}`);
 
-        // 2. Fetch Assets for this Site
-        const assetsRes = await getSimpro(`/api/v1.0/companies/${COMPANY_ID}/sites/${siteId}/assets/`);
+        // 2. Fetch Customer Assets for this Site (Returns ServiceLevels INLINE)
+        const assetsRes = await getSimpro(`/api/v1.0/companies/${COMPANY_ID}/customerAssets/?Site.ID=${siteId}&pageSize=250`);
         if (!assetsRes.data || assetsRes.data.length === 0) return;
 
         for (const asset of assetsRes.data) {
             try {
-                // 3. Fetch Service Levels for each asset
-                const slRes = await getSimpro(`/api/v1.0/companies/${COMPANY_ID}/assets/${asset.ID}/serviceLevels/`);
-                if (!slRes.data) continue;
+                // 3. Extract Inline Service Levels
+                const serviceLevels = asset.ServiceLevels || [];
+                if (serviceLevels.length === 0) continue;
 
-                for (const sl of slRes.data) {
+                for (const sl of serviceLevels) {
                     const slName = (sl.Name || "").toLowerCase();
-                    const isAnnualMatch = jobType === "12 Monthly" && (slName.includes("annual") || slName.includes("12 month"));
-                    const is6MonthMatch = jobType === "6 Monthly" && (slName.includes("6 month"));
+                    const isAnnualMatch = jobType === "12 Monthly" && (slName.includes("annual") || slName.includes("12 month") || slName.includes("yearly") || slName.includes("12month"));
+                    const is6MonthMatch = jobType === "6 Monthly" && (slName.includes("6 month") || slName.includes("6month") || slName.includes("bi-annual") || slName.includes("half year") || slName.includes("semi-annual"));
 
                     if (isAnnualMatch || is6MonthMatch) {
-                        // 4. Update if the date is different (Safety check: also ensuring we don't move backwards)
-                        if (sl.NextDate !== nextDateStr) {
+                        // 4. Update if the date is different (Standardizes to /customerAssets/ endpoint)
+                        const dateStr = sl.ServiceDate || sl.NextDate || "";
+                        if (dateStr !== nextDateStr) {
                             console.log(`[AUTO-SYNC] Updating Asset #${asset.ID} Service Level #${sl.ID} to ${nextDateStr}`);
-                            await axios.patch(`${process.env.SIMPRO_BASE_URL}/api/v1.0/companies/${COMPANY_ID}/assets/${asset.ID}/serviceLevels/${sl.ID}/`, 
-                                { NextDate: nextDateStr },
+                            await axios.patch(`${process.env.SIMPRO_BASE_URL}/api/v1.0/companies/${COMPANY_ID}/customerAssets/${asset.ID}/serviceLevels/${sl.ID}/`, 
+                                { ServiceDate: nextDateStr, NextDate: nextDateStr },
                                 { headers: { 'Authorization': `Bearer ${process.env.SIMPRO_ACCESS_TOKEN}` } }
                             );
                         }
@@ -134,7 +136,7 @@ async function sendMailWithRetry(transporter, mailOptions, retries = 1) {
     }
 }
 
-const getSimpro = async (path) => {
+const getSimpro = async (path, retries = 3, delayMs = 1500) => {
     if (!SIMPRO_BASE_URL) throw new Error("SIMPRO_BASE_URL not configured");
     const rawUrl = `${SIMPRO_BASE_URL.replace(/\/$/, '')}${path.startsWith('/') ? '' : '/'}${path}`;
     console.log(`[simPRO FETCH] URL: ${rawUrl}`);
@@ -151,6 +153,11 @@ const getSimpro = async (path) => {
         console.log(`[simPRO SUCCESS] ${path} -> ${response.status}`);
         return response;
     } catch (urlErr) {
+        if (urlErr.response && urlErr.response.status === 429 && retries > 0) {
+            console.warn(`[simPRO RATE LIMIT] 429 on ${path}. Retrying in ${delayMs}ms...`);
+            await new Promise(res => setTimeout(res, delayMs));
+            return getSimpro(path, retries - 1, delayMs * 2);
+        }
         console.error(`[simPRO ERROR] ${path} -> ${urlErr.message}`);
         throw urlErr;
     }
@@ -161,6 +168,60 @@ const mcp = new FastMCP({
     name: "simPRO FPOWS Automation",
     version: "1.0.0"
 });
+
+// CLIENT POV DISTILLER: Extract the core task and notes, hide the template boilerplate
+function cleanDescriptionForClient(desc) {
+    if (!desc) return "Standard maintenance and inspection.";
+    
+    // 1. Initial cleanup
+    const clean = desc.replace(/<br\s*\/?>/gi, '\n')
+                      .replace(/<\/p>|<\/div>/gi, '\n')
+                      .replace(/<[^>]+>/g, '')
+                      .replace(/[ \t]+/g, ' ')
+                      .trim();
+    
+    // 2. Split into lines and filter
+    const lines = clean.split('\n').map(l => l.trim()).filter(Boolean);
+    const filtered = lines.filter(line => {
+        // Ignore standard Redmen boilerplate lines
+        const p = line.toLowerCase();
+        if (p.startsWith('techs attending:')) return false;
+        if (p.startsWith('attendance confirmed')) return false;
+        if (p.startsWith('name:')) return false;
+        if (p.startsWith('phone')) return false; // Catches 'Phone Number:'
+        if (p.startsWith('email:')) return false;
+        if (p.startsWith('address:')) return false;
+        if (p.startsWith('site address:')) return false;
+        if (p.startsWith('site:')) return false;
+        if (p.startsWith('contact:')) return false;
+        if (p.includes('my link ly')) return false; // Common template name
+        if (p.includes('******quote number:')) return false;
+        if (p.startsWith('scheduled time:')) return false;
+        if (p.startsWith('scheduled date:')) return false;
+        if (p.startsWith('osa name:')) return false;
+        if (p.startsWith('access instructions:')) return false;
+        if (p.startsWith('materials / specialty tools')) return false;
+        if (p.startsWith('materials location:')) return false;
+        if (p.includes('redmen fire protection scope of works')) return false;
+        if (p.includes('qualified technician to attend')) return false;
+        if (p.includes('as/nz 1668')) return false;
+        if (p.includes('bca ci part e2')) return false;
+        if (p.includes('witness testing of essential fans')) return false;
+        if (p.includes('operation checks of mechanical equipment')) return false;
+        if (p.includes('reporting and certification')) return false;
+        if (p.includes('sell price:')) return false;
+        if (p.includes('quoted by:')) return false;
+        if (p.includes('requested by:')) return false;
+        if (p === 'scope of works:') return false;
+        return true;
+    });
+
+    // 3. Join back with nice formatting
+    if (filtered.length === 0) return "General Fire Safety Inspection / Routine Testing";
+    
+    // Limit to 15 lines max to keep the table manageable
+    return filtered.slice(0, 15).join('\n');
+}
 
 /**
  * Shared logic for data aggregation
@@ -235,7 +296,8 @@ const fetchFpowData = async (jobId) => {
             
             const jobsRes = await getSimpro(siteJobsUrl);
             if (jobsRes.data && jobsRes.data.length > 0) {
-                const jobDetails = await Promise.all(jobsRes.data.map(async (j) => {
+                const jobDetails = [];
+                for (const j of jobsRes.data) {
                     try {
                         const detailRes = await getSimpro(`/api/v1.0/companies/${COMPANY_ID}/jobs/${j.ID}`);
                         const dj = detailRes.data;
@@ -244,64 +306,10 @@ const fetchFpowData = async (jobId) => {
                         if (dj.Stage) {
                             const st = dj.Stage.toLowerCase();
                             if (!(st.includes('pending') || st.includes('progress'))) {
-                                return null;
+                                continue;
                             }
                         }
                         
-                        // CLIENT POV DISTILLER: Extract the core task and notes, hide the template boilerplate
-                        function cleanDescriptionForClient(desc) {
-                            if (!desc) return "Standard maintenance and inspection.";
-                            
-                            // 1. Initial cleanup
-                            const clean = desc.replace(/<br\s*\/?>/gi, '\n')
-                                              .replace(/<\/p>|<\/div>/gi, '\n')
-                                              .replace(/<[^>]+>/g, '')
-                                              .replace(/[ \t]+/g, ' ')
-                                              .trim();
-                            
-                            // 2. Split into lines and filter
-                            const lines = clean.split('\n').map(l => l.trim()).filter(Boolean);
-                            const filtered = lines.filter(line => {
-                                // Ignore standard Redmen boilerplate lines
-                                const p = line.toLowerCase();
-                                if (p.startsWith('techs attending:')) return false;
-                                if (p.startsWith('attendance confirmed')) return false;
-                                if (p.startsWith('name:')) return false;
-                                if (p.startsWith('phone')) return false; // Catches 'Phone Number:'
-                                if (p.startsWith('email:')) return false;
-                                if (p.startsWith('address:')) return false;
-                                if (p.startsWith('site address:')) return false;
-                                if (p.startsWith('site:')) return false;
-                                if (p.startsWith('contact:')) return false;
-                                if (p.includes('my link ly')) return false; // Common template name
-                                if (p.includes('******quote number:')) return false;
-                                if (p.startsWith('scheduled time:')) return false;
-                                if (p.startsWith('scheduled date:')) return false;
-                                if (p.startsWith('osa name:')) return false;
-                                if (p.startsWith('access instructions:')) return false;
-                                if (p.startsWith('materials / specialty tools')) return false;
-                                if (p.startsWith('materials location:')) return false;
-                                if (p.includes('redmen fire protection scope of works')) return false;
-                                if (p.includes('qualified technician to attend')) return false;
-                                if (p.includes('as/nz 1668')) return false;
-                                if (p.includes('bca ci part e2')) return false;
-                                if (p.includes('witness testing of essential fans')) return false;
-                                if (p.includes('operation checks of mechanical equipment')) return false;
-                                if (p.includes('reporting and certification')) return false;
-                                if (p.includes('sell price:')) return false;
-                                if (p.includes('quoted by:')) return false;
-                                if (p.includes('requested by:')) return false;
-                                if (p === 'scope of works:') return false;
-                                return true;
-                            });
-
-                            // 3. Join back with nice formatting
-                            if (filtered.length === 0) return "General Fire Safety Inspection / Routine Testing";
-                            
-                            // Limit to 15 lines max to keep the table manageable
-                            return filtered.slice(0, 15).join('\n');
-                        }
-
                         const rawDesc = (dj.Description || "");
                         const descFormatted = cleanDescriptionForClient(rawDesc);
                         
@@ -410,7 +418,7 @@ const fetchFpowData = async (jobId) => {
                             } catch (e) {}
                         }
 
-                        return {
+                        jobDetails.push({
                             Date: dj.DateIssued ? new Date(dj.DateIssued).toLocaleDateString('en-AU') : "",
                             EquipmentType: eqType,
                             Issue: descFormatted,
@@ -424,10 +432,10 @@ const fetchFpowData = async (jobId) => {
                             Job: j.ID ? `#${j.ID}` : "", 
                             Comment: "",
                             Status: displayStatus // Use our distilled DisplayStatus for sorting consistency
-                        };
-                    } catch (e) { return null; }
-                }));
-                outstandingWorks.push(...jobDetails.filter(d => d !== null));
+                        });
+                    } catch (e) { /* ignore */ }
+                }
+                outstandingWorks.push(...jobDetails);
             }
 
             let siteQuotesUrl = `/api/v1.0/companies/${COMPANY_ID}/quotes/?Site.ID=${siteId}&pageSize=50`;
@@ -1002,8 +1010,104 @@ hApp.get('/api/presence/:jobId', (req, res) => {
     res.json({ viewers: list });
 });
 
+// --- Bi-Weekly Manager Reporting ---
+async function sendManagerBiWeeklyReport() {
+    try {
+        const logPath = path.join(__dirname, 'email_history.jsonl');
+        const statePath = path.join(__dirname, 'last_biweekly_report.txt');
+        const now = new Date();
+
+        // Check if we should run (Every 14 days logic)
+        if (fs.existsSync(statePath)) {
+            const lastSentStr = fs.readFileSync(statePath, 'utf8').trim();
+            const lastSent = new Date(lastSentStr);
+            const daysSince = (now - lastSent) / (1000 * 60 * 60 * 24);
+            if (daysSince < 13) {
+                console.log(`[REPORTER] Skipping this week. Last report sent ${Math.round(daysSince)} days ago.`);
+                return;
+            }
+        }
+
+        console.log('[REPORTER] Generating Bi-Weekly Status Report for Manager...');
+        
+        if (!fs.existsSync(logPath)) {
+            console.log('[REPORTER] No history found, skipping email.');
+            return;
+        }
+
+        const raw = fs.readFileSync(logPath, 'utf8');
+        const lines = raw.trim().split('\n').filter(Boolean);
+        
+        const allLogs = lines.map(line => {
+            try { return JSON.parse(line); } catch (e) { return null; }
+        }).filter(item => item !== null);
+
+        if (allLogs.length === 0) {
+            console.log('[REPORTER] No history found.');
+        }
+
+        const reportHtml = `
+            <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+                <h2 style="color: #2c3e50;">FPOWS Master Activity Summary</h2>
+                <p>Hello, here is the full summary of automation activities captured by the system as of <strong>${now.toLocaleDateString()}</strong>.</p>
+                
+                <div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 4px;">
+                    <strong style="font-size: 1.2rem;">Total Reports Sent (All Time): ${allLogs.length}</strong>
+                </div>
+
+                <table width="100%" style="border-collapse: collapse; font-size: 13px;">
+                    <thead>
+                        <tr style="background: #2c2c2c; color: white;">
+                            <th style="padding: 10px; border: 1px solid #444; text-align: left;">Date</th>
+                            <th style="padding: 10px; border: 1px solid #444; text-align: left;">Job ID</th>
+                            <th style="padding: 10px; border: 1px solid #444; text-align: left;">Client</th>
+                            <th style="padding: 10px; border: 1px solid #444; text-align: left;">Recipient</th>
+                            <th style="padding: 10px; border: 1px solid #444; text-align: left;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${allLogs.length === 0 ? '<tr><td colspan="5" style="padding: 20px; text-align: center; color: #999;">No activities logged in this period.</td></tr>' : 
+                          allLogs.map(log => `
+                            <tr>
+                                <td style="padding: 8px; border: 1px solid #eee;">${log.timestamp ? new Date(log.timestamp).toLocaleDateString() : '—'}</td>
+                                <td style="padding: 8px; border: 1px solid #eee;">#${log.jobId}</td>
+                                <td style="padding: 8px; border: 1px solid #eee;">${log.client}</td>
+                                <td style="padding: 8px; border: 1px solid #eee; font-size: 11px;">${log.clientEmail || log.to || '—'}</td>
+                                <td style="padding: 8px; border: 1px solid #eee; color: #27ae60; font-weight: bold;">SUCCESS</td>
+                            </tr>
+                        `).reverse().join('')}
+                    </tbody>
+                </table>
+                <p style="margin-top: 30px; font-size: 11px; color: #888;">This is an automated system report from your FPOWS Automation Server.</p>
+            </div>
+        `;
+
+        const transporter = getTransporter();
+        const recipients = [MANAGER_EMAIL, "bryan.morales@redadair.com.au"].filter(Boolean).join(',');
+
+        await transporter.sendMail({
+            from: `"FPOWS Reporter" <${SMTP_USER}>`,
+            to: recipients,
+            subject: `FPOWS Automated Bi-Weekly Summary - ${now.toLocaleDateString()}`,
+            html: reportHtml
+        });
+
+        fs.writeFileSync(statePath, now.toISOString());
+        console.log(`[REPORTER] Success! Bi-Weekly summary sent to: ${recipients}`);
+    } catch (err) {
+        console.error(`[REPORTER ERROR] ${err.message}`);
+    }
+}
+
+// Schedule: 8:00 AM every Tuesday
+// Cron format: minute hour dayOfMonth month dayOfWeek
+cron.schedule('0 8 * * 2', () => {
+    sendManagerBiWeeklyReport();
+});
+
 
 // Start Server (Express Listener for Cloud Run)
 hApp.listen(PORT, '0.0.0.0', () => {
     console.log(`[SERVER] FPOWS Automation live on port ${PORT}`);
 });
+
